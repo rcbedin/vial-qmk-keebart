@@ -103,6 +103,28 @@ static const char PROGMEM QMK_LOGO_3[] = {
     0xC1, 0xC2, 0xC3, 0xC4, 0x00
 };
 
+
+static const char *const PROGMEM BONGO_IDLE[] = {
+    BONGO_IDLE_R2,
+    BONGO_IDLE_R3
+};
+
+static const char *const PROGMEM BONGO_LEFT_BUSY[] = {
+    BONGO_WRITE_LEFT_R2,
+    BONGO_WRITE_LEFT_R3
+};
+
+static const char *const PROGMEM BONGO_RIGHT_BUSY[] = {
+    BONGO_WRITE_RIGHT_R2,
+    BONGO_WRITE_RIGHT_R3
+};
+
+static const char *const PROGMEM BONGO_BUSY[] = {
+    BONGO_WRITE_R2,
+    BONGO_WRITE_R3
+};
+
+
 typedef struct {
     bool oled_on;
 } oled_state_m2s_t;
@@ -116,6 +138,18 @@ typedef struct {
     uint32_t right;
 } presses_m2s_t;
 
+typedef struct {    
+    uint8_t left;
+    uint8_t right;
+} pressed_keys_m2s_t;
+
+typedef enum {
+    ANIM_IDLE,
+    ANIM_LEFT,
+    ANIM_RIGHT,
+    ANIM_BOTH
+} bongo_anim_state_t;
+
 static bool g_oled_init_done = false;
 static uint8_t g_oled_max_char;
 static uint8_t g_oled_max_line;
@@ -124,10 +158,13 @@ static bool g_splash_rendered = false;
 static uint32_t g_splash_start_ms = 0;
 static uint32_t g_user_ontime = 0;
 static uint16_t g_last_keycode = KC_NO;
+static uint8_t g_leftkeys_pressed = 0;
+static uint8_t g_rightkeys_pressed = 0;
 static uint32_t g_press_left = 0;
 static uint32_t g_press_right = 0;
 static oled_state_m2s_t g_remote_oled_state = { true };
 static presses_m2s_t g_remote_presses = {0, 0};
+static const char *const *current_bongo_anim_frames = BONGO_IDLE;
 
 static inline pin_t get_charge_pump_enable_pin(void) {
     return GP20;
@@ -193,13 +230,13 @@ void print_current_layer(uint8_t row) {
     char layer_str[8];
     switch (get_highest_layer(layer_state)) {
         case _BASE:
-            strcpy(layer_str, "Base");
+            strcpy(layer_str, "B");
             break;
         case _LOWER:
-            strcpy(layer_str, "Lower");
+            strcpy(layer_str, "L");
             break;
         case _RAISE:
-            strcpy(layer_str, "Raise");
+            strcpy(layer_str, "R");
             break;
         default:
             // TODO: consider remove snprintf
@@ -267,7 +304,7 @@ static void user_sync_oled_state_slave(uint8_t in_len, const void* in_data,
 static void user_sync_lastkey_slave(uint8_t in_len, const void* in_data,
                                     uint8_t out_len, void* out_data) {
     if (in_len >= sizeof(lastkey_m2s_t)) {
-        const lastkey_m2s_t* p = (const lastkey_m2s_t*)in_data;
+        const lastkey_m2s_t* p = (const lastkey_m2s_t*)in_data;      
         g_last_keycode = p->keycode;
     }
 }
@@ -309,15 +346,19 @@ void housekeeping_task_user(void) {
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     g_user_ontime = timer_read32();
+    
+    uint8_t row = record->event.key.row;
+    bool is_left_side = (row < MATRIX_ROWS / 2);
 
     if (record->event.pressed) {
         g_last_keycode = keycode;
 
-        uint8_t row = record->event.key.row;
-        if (row < MATRIX_ROWS / 2) {
+        if (is_left_side) {
             g_press_left++;
+            g_leftkeys_pressed++;
         } else {
             g_press_right++;
+            g_rightkeys_pressed++;
         }
 
         if (is_keyboard_master()) {
@@ -325,10 +366,54 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             (void)transaction_rpc_send(USER_SYNC_LASTKEY, sizeof(keycode_pkt), &keycode_pkt);
 
             presses_m2s_t presses_pkt = { g_press_left, g_press_right };
-            (void)transaction_rpc_send(USER_SYNC_PRESSES, sizeof(presses_pkt), &presses_pkt);
+            (void)transaction_rpc_send(USER_SYNC_PRESSES, sizeof(presses_pkt), &presses_pkt);            
         }
+    } else {
+        if (is_left_side && g_leftkeys_pressed > 0) {
+            g_leftkeys_pressed--;
+        } else if (!is_left_side && g_rightkeys_pressed > 0) {
+            g_rightkeys_pressed--;            
+        }           
     }
     return true;
+}
+
+void matrix_scan_user(void) {
+    bool is_master = is_keyboard_master();
+    if (!is_master && !is_keyboard_left()) {
+        return;
+    }
+    
+    bool timeout = timer_elapsed(g_user_ontime) > 100;
+
+    bool left_active = g_leftkeys_pressed > 0;
+    bool right_active = g_rightkeys_pressed > 0;        
+  
+    if (!timeout) {
+        if (left_active && right_active) {
+            current_bongo_anim_frames = BONGO_BUSY;
+
+        } else if (left_active) {
+            current_bongo_anim_frames = BONGO_LEFT_BUSY;
+
+        } else if (right_active) {
+            current_bongo_anim_frames = BONGO_RIGHT_BUSY;
+        }
+
+    } else {
+        if (left_active && right_active) {
+            current_bongo_anim_frames = BONGO_BUSY;
+
+        } else if (left_active) {
+            current_bongo_anim_frames = BONGO_LEFT_BUSY;
+
+        } else if (right_active) {
+            current_bongo_anim_frames = BONGO_RIGHT_BUSY;
+
+        } else {
+            current_bongo_anim_frames = BONGO_IDLE;
+        }
+    }
 }
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
@@ -356,6 +441,26 @@ bool oled_post_init(void) {
     return false;
 }
 
+void render_bongo(void) {
+    oled_set_cursor(0,13);
+    oled_write_P(BONGO_R1, false);
+
+    for(int i = 0; i < 2; i++) {
+        const char *frame = (const char *)pgm_read_ptr(&current_bongo_anim_frames[i]);
+        oled_set_cursor(0, 14 + i);
+        oled_write_P(frame, false);
+    }
+}
+
+uint8_t render_split_balance(const uint32_t *presses_qt, const char *side, const uint32_t *total ) {   
+    uint8_t pct_calc = round_percentage((100.0f * (*presses_qt)) / (*total));
+
+    oled_set_cursor(0, 7);
+    oled_write_P(side, false);
+    print_balance(8, pct_calc);
+
+    return 9;
+}
 
 bool oled_task_user(void) {
     // perform custom initialisation once
@@ -374,7 +479,7 @@ bool oled_task_user(void) {
     }
 
     // sync key presses
-    uint32_t local_presses_left, local_presses_right;
+    uint32_t  local_presses_left, local_presses_right;
     if (is_keyboard_master()) {
         local_presses_left = g_press_left;
         local_presses_right = g_press_right;
@@ -383,9 +488,9 @@ bool oled_task_user(void) {
         local_presses_right = g_remote_presses.right;
     }
 
+    const uint32_t idle_time = timer_elapsed32(g_user_ontime);
     // manage oled on/off state based on idle time
-    if (is_keyboard_master()) {
-        const uint32_t idle_time = timer_elapsed32(g_user_ontime);
+    if (is_keyboard_master()) {        
         if (!is_oled_on()) {
             if (idle_time > OLED_TIMEOUT_USER) {
                 return false; // stay off
@@ -417,55 +522,57 @@ bool oled_task_user(void) {
     if (total == 0) {
         total = 1;  // avoid div by 0
     }
-    uint8_t pct_left = round_percentage((100.0f * local_presses_left) / total);
-    uint8_t pct_right = round_percentage((100.0f * local_presses_right) / total);
+    // uint8_t pct_left = round_percentage((100.0f * local_presses_left) / total);
+    // uint8_t pct_right = round_percentage((100.0f * local_presses_right) / total);
 
     if (is_keyboard_left()) {
+        // uint8_t current_column = 0;
         // Layer state
-        oled_set_cursor(0, 0);
-        oled_write_P(PSTR("Layer:"), false);
-        print_current_layer(1);
+        // oled_set_cursor(0, 0);
+        // oled_write_P(PSTR("Layer:"), false);
+        // print_current_layer(0);
 
         // Lock status
         led_t led_state = host_keyboard_led_state();
         if (led_state.num_lock) {
-            oled_blit_16x16_P(NUM_LOCK_BITMAP, 0, 3);
+            oled_blit_16x16_P(NUM_LOCK_BITMAP, 0, 0);
         } else {
-            oled_blit_16x16_P(EMPTY_BITMAP, 0, 3);
+            oled_blit_16x16_P(EMPTY_BITMAP, 0, 0);
         }
         if (led_state.caps_lock) {
-            oled_blit_16x16_P(CAPS_LOCK_BITMAP, 24, 3);
+            oled_blit_16x16_P(CAPS_LOCK_BITMAP, 24, 0);
         } else {
-            oled_blit_16x16_P(EMPTY_BITMAP, 24, 3);
+            oled_blit_16x16_P(EMPTY_BITMAP, 24, 0);
         }
         if (led_state.scroll_lock) {
-            oled_blit_16x16_P(SCROLL_LOCK_BITMAP, 48, 3);
+            oled_blit_16x16_P(SCROLL_LOCK_BITMAP, 48, 0);
         } else {
-            oled_blit_16x16_P(EMPTY_BITMAP, 48, 3);
+            oled_blit_16x16_P(EMPTY_BITMAP, 48, 0);
         }
-
-        // split balance
-        oled_set_cursor(0, 7);
-        oled_write_P(PSTR("Left:"), false);
-        print_balance(8, pct_left);
+    
+        render_split_balance(&local_presses_left, PSTR("Left:"), &total);
 
         // Last key pressed
-        oled_set_cursor(0, 10);
-        oled_write_P(PSTR("Last Key:"), false);
-        oled_set_cursor(0, 11);
-        const char *keycode_str = get_keycode_string(unwrap_keycode(g_last_keycode));
-        oled_print_right_aligned(keycode_str, g_oled_max_char);
+        // oled_set_cursor(0, 10);
+        // oled_write_P(PSTR("Last Key:"), false);
+        // oled_set_cursor(0, 11);
+        // const char *keycode_str = get_keycode_string(unwrap_keycode(g_last_keycode));
+        // oled_print_right_aligned(keycode_str, g_oled_max_char);
 
+        render_bongo();
+      
         // QMK logo
-        oled_set_cursor(0, 13);
+        oled_set_cursor(6, 13);
         oled_write_P(QMK_LOGO_1, false);
-        oled_set_cursor(0, 14);
+        oled_set_cursor(6, 14);
         oled_write_P(QMK_LOGO_2, false);
-        oled_set_cursor(0, 15);
+        oled_set_cursor(6, 15);
         oled_write_P(QMK_LOGO_3, false);
-        oled_set_cursor(7, 15);
-        oled_write_P(PSTR("QMK"), false);
+
+        // oled_set_cursor(7, 15);
+        // oled_write_P(PSTR("QMK"), false);
     } else {
+        
         // Uptime (only if oled is on)
         oled_set_cursor(0, 0);
         oled_write_P(PSTR("Uptime:"), false);
@@ -478,10 +585,11 @@ bool oled_task_user(void) {
         oled_write_P(PSTR("(25 s):"), false);
         print_wpm(5);
 
+        render_split_balance(&local_presses_right, PSTR("Right:"), &total);
         // split balance
-        oled_set_cursor(0, 7);
-        oled_write_P(PSTR("Right:"), false);
-        print_balance(8, pct_right);
+        // oled_set_cursor(0, 7);
+        // oled_write_P(PSTR("Right:"), false);
+        // print_balance(8, pct_right);
 
         // Keebart logo
         oled_blit_24x24_P(KEEBART_BITMAP_24x24, 20, 11);
