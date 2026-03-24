@@ -2,6 +2,15 @@
 
 #ifdef OLED_ENABLE
 #include "bitmaps.h"
+#include "_storage.h"
+#include "_utils.h"
+#include "_globals.h"
+#include "animations/bongo_cat_bitmaps.h"
+#include "animations/bongo_cat.h"
+#include "roboeyes.h"
+#include "oled_menu.h"
+#include "screen_renderer.h"
+
 #endif
 
 enum layers {
@@ -10,120 +19,99 @@ enum layers {
     _RAISE = 2
 };
 
+enum enc_left_layer {
+    _EC_L_VOLUME = 0,
+    _EC_L_MEDIA = 1,
+    _EC_L_ZOOM = 2,
+    _EC_L_OLED_SPECIAL = 3
+};
+
+enum enc_right_layer {
+    _ER_DEFAULT = 0,
+};
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /*
  * QWERTY
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * |  `   |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |  `   |
+ * |  `   |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |  Bspc|
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | ESC  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  | Bspc |
+ * | ESC  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |   \| |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | Tab  |   A  |   S  |   D  |   F  |   G  |-------.    ,-------|   H  |   J  |   K  |   L  |   ;  |  '   |
- * |------+------+------+------+------+------|  MUTE |    | PAUSE |------+------+------+------+------+------|
+ * | Tab  |   A  |   S  |   D  |   F  |   G  |-------.    ,-------|   H  |   J  |   K  |   L  |   ;  |  '"  |
+ * |------+------+------+------+------+------|  F13  |    | F14   |------+------+------+------+------+------|
  * |LShift|   Z  |   X  |   C  |   V  |   B  |-------|    |-------|   N  |   M  |   ,  |   .  |   /  |RShift|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *            | LGUI | LAlt | LCTR |LOWER | /Enter  /       \Space \  |RAISE | RCTR | RAlt | RGUI |
+ *            | LCTR | LAlt |- _   |LOWER | /Space  /       \Enter \  |RAISE | =+   | [    |     ] |           
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
  */
 
 [_BASE] = LAYOUT_split_4x6_5(
-  KC_GRV,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,  KC_GRV,
-  KC_ESC,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,  KC_BSPC,
+  KC_GRV,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,  KC_BSPC,
+  KC_ESC,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,  KC_PIPE,
   KC_TAB,   KC_A,   KC_S,    KC_D,    KC_F,    KC_G,                     KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN,  KC_QUOT,
-  KC_LSFT,  KC_Z,   KC_X,    KC_C,    KC_V,    KC_B, KC_MUTE,    KC_MPLY,KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,
-                 KC_LGUI,KC_LALT,KC_LCTL, TL_LOWR, KC_ENT,      KC_SPC,  TL_UPPR, KC_RCTL, KC_RALT, KC_RGUI
+  KC_LSFT,  KC_Z,   KC_X,    KC_C,    KC_V,    KC_B, KC_F13,    KC_F14 ,KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,
+                 KC_LCTL,KC_LALT,KC_MINS, TL_LOWR, KC_SPC,      KC_ENT,  TL_UPPR, KC_EQL, KC_LBRC, KC_RBRC
 ),
 /* LOWER
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * |      |  F1  |  F2  |  F3  |  F4  |  F5  |                    |  F6  |  F7  |  F8  |  F9  | F10  | F11  |
+ * |      |  F1  |  F2  |  F3  |  F4  |  F5  |                    |      |      |      |      |     |  bks  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |  `   |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  | F12  |
+ * |  esc |   F6 |  F7  |  f8  |  f9  |  f10 |                    |      |      |   up |      |      |      |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | Tab  |   !  |   @  |   #  |   $  |   %  |-------.    ,-------|   ^  |   &  |   *  |   (  |   )  |   |  |
+ * |   tab|      |     | home  | pgup |  f11 |-------.    ,-------|      |  left|  dwn | right|      |      |
  * |------+------+------+------+------+------|       |    |       |------+------+------+------+------+------|
- * | Shift|  =   |  -   |  +   |   {  |   }  |-------|    |-------|   [  |   ]  |   ;  |   :  |   \  | Shift|
+ * | caps |      |     |  end  | pgdw |   f12|-------|    |-------|      |      |      |      |      | sft  |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *            | LGUI | LAlt | LCTR |LOWER | /Enter  /       \Space \  |RAISE | RCTR | RAlt | RGUI |
+ *            |      |      |      |LOWER | /       /       \      \  |      |      |      |      |
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
  */
 [_LOWER] = LAYOUT_split_4x6_5(
-  _______,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,                       KC_F6,   KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,
-  KC_GRV,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                       KC_6,    KC_7,    KC_8,    KC_9,    KC_0,  KC_F12,
-  _______, KC_EXLM,   KC_AT, KC_HASH,  KC_DLR, KC_PERC,                       KC_CIRC, KC_AMPR, KC_ASTR, KC_LPRN, KC_RPRN, KC_PIPE,
-  _______,  KC_EQL, KC_MINS, KC_PLUS, KC_LCBR, KC_RCBR, _______,       _______, KC_LBRC, KC_RBRC, KC_SCLN, KC_COLN, KC_BSLS, _______,
+  QK_BOOT,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,                       XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,  XXXXXXX,  _______,
+  _______,    KC_F6,   KC_F7,  KC_F8,    KC_F9,   KC_F10,                       XXXXXXX,    XXXXXXX,    KC_UP,    XXXXXXX,    XXXXXXX,  XXXXXXX,
+  _______, XXXXXXX,   XXXXXXX, KC_HOME,  KC_PGUP, KC_F11,                       XXXXXXX, KC_LEFT, KC_DOWN, KC_RGHT, XXXXXXX, XXXXXXX,
+  KC_CAPS,  XXXXXXX, XXXXXXX, KC_END, KC_PGDN, KC_F12, _______,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______,
                        _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______
 ),
 /* RAISE
  * ,----------------------------------------.                    ,-----------------------------------------.
- * |      |      |      |      |      |      |                    |      |      |      |      |      |      |
+ * |      |      |      |      |      |      |                    |      |   /  |   *  |   (  |  )   | del  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | Esc  | Ins  | Pscr | Menu |      |      |                    |      |      |  Up  |      | DLine| Bspc |
+ * |  esc |      |      |      |      |      |                    |      |  7   |  8   |  9   |   -  | ins
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | Tab  | LAt  | LCtl |LShift|      | Caps |-------.    ,-------|      | Left | Down | Rigth|  Del | Bspc |
- * |------+------+------+------+------+------|        |    |       |------+------+------+------+------+------|
- * |Shift | Undo |  Cut | Copy | Paste|      |-------|    |-------|      |      |      |      |      | Shift|
+ * |   tab|      |      |      |      |      |-------.    ,-------|      |  4   |  5   |  6   |  +   |      |
+ * |------+------+------+------+------+------|        |   |       |------+------+------+------+------+------|
+ * |  shf |      |      |      |      |      |-------|    |-------|   0  |  1   |  2   |  3   |  .   | shft |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *            | LGUI | LAlt | LCTR |LOWER | /Enter  /       \Space \  |RAISE | RCTR | RAlt | RGUI |
+ *            |      |      |      |      | /       /       \      \  |RAISE |      |      |      |
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
  */
 [_RAISE] = LAYOUT_split_4x6_5(
-  _______, _______ , _______ , _______ , _______ , _______,                           _______,  _______  , _______,  _______ ,  _______ ,_______,
-  _______,  KC_INS,  KC_PSCR,   KC_APP,  XXXXXXX, XXXXXXX,                        KC_PGUP, XXXXXXX,   KC_UP, XXXXXXX,C(KC_BSPC), KC_BSPC,
-  _______, KC_LALT,  KC_LCTL,  KC_LSFT,  XXXXXXX, KC_CAPS,                       KC_PGDN,  KC_LEFT, KC_DOWN, KC_RGHT,  KC_DEL, KC_BSPC,
-  _______, C(KC_Z), C(KC_X), C(KC_C), C(KC_V), XXXXXXX,  _______,       _______,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,   XXXXXXX, _______,
+  XXXXXXX, XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX,                           XXXXXXX,  KC_KP_SLASH  , KC_KP_ASTERISK,  KC_LPRN ,  KC_RPRN ,QK_BOOT,//KC_DELETE,
+  _______,  XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX, XXXXXXX,                        KC_PSCR, KC_KP_7, KC_KP_8, KC_KP_9, KC_KP_MINUS, KC_INSERT,
+  _______, XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX, XXXXXXX,                       _______,  KC_KP_4, KC_KP_5, KC_KP_6,  KC_KP_PLUS, _______,
+  _______, XXXXXXX, XXXXXXX, XXXXXXX,XXXXXXX, XXXXXXX,  XXXXXXX,       _______,  KC_KP_0, KC_KP_1, KC_KP_2, KC_KP_3,  KC_KP_DOT, _______,
                          _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______
 ),
 };
 
 #if defined(ENCODER_MAP_ENABLE)
-const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
-    [_BASE] = { ENCODER_CCW_CW(KC_VOLD, KC_VOLU), ENCODER_CCW_CW(KC_MPRV, KC_MNXT) },
-    [_LOWER] = { ENCODER_CCW_CW(_______, _______), ENCODER_CCW_CW(_______, _______) },
-    [_RAISE] = { ENCODER_CCW_CW(_______, _______), ENCODER_CCW_CW(_______, _______) }
-};
+// const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
+    // [_BASE] = { ENCODER_CCW_CW(KC_VOLD, KC_VOLU), ENCODER_CCW_CW(KC_MPRV, KC_MNXT) },
+//     [_BASE] = { ENCODER_CCW_CW(QK_USER_28, QK_USER_29), ENCODER_CCW_CW(QK_USER_30, QK_USER_31) },
+//     [_LOWER] = { ENCODER_CCW_CW(_______, _______), ENCODER_CCW_CW(_______, _______) },
+//     [_RAISE] = { ENCODER_CCW_CW(_______, _______), ENCODER_CCW_CW(_______, _______) }
+// };
 #endif
 
 #ifdef OLED_ENABLE
 
-#include "transactions.h"
-
-static const uint8_t OLED_WIDTH = OLED_DISPLAY_HEIGHT;
 static const uint16_t SPLASH_DURATION_MS = 2500;
 
-static const char PROGMEM QMK_LOGO_1[] = {
-    0x81, 0x82, 0x83, 0x84, 0x00
-};
-static const char PROGMEM QMK_LOGO_2[] = {
-    0xA1, 0xA2, 0xA3, 0xA4, 0x00
-};
-static const char PROGMEM QMK_LOGO_3[] = {
-    0xC1, 0xC2, 0xC3, 0xC4, 0x00
-};
-
-
-static const char *const PROGMEM BONGO_IDLE[] = {
-    BONGO_IDLE_R2,
-    BONGO_IDLE_R3
-};
-
-static const char *const PROGMEM BONGO_LEFT_BUSY[] = {
-    BONGO_WRITE_LEFT_R2,
-    BONGO_WRITE_LEFT_R3
-};
-
-static const char *const PROGMEM BONGO_RIGHT_BUSY[] = {
-    BONGO_WRITE_RIGHT_R2,
-    BONGO_WRITE_RIGHT_R3
-};
-
-static const char *const PROGMEM BONGO_BUSY[] = {
-    BONGO_WRITE_R2,
-    BONGO_WRITE_R3
-};
-
+#include "transactions.h"
 
 typedef struct {
     bool oled_on;
@@ -138,58 +126,56 @@ typedef struct {
     uint32_t right;
 } presses_m2s_t;
 
+typedef struct {
+    eeprom_data_t data;
+} config_sync_t;
+
 typedef struct {    
     uint8_t left;
     uint8_t right;
 } pressed_keys_m2s_t;
 
-typedef enum {
-    ANIM_IDLE,
-    ANIM_LEFT,
-    ANIM_RIGHT,
-    ANIM_BOTH
-} bongo_anim_state_t;
-
 static bool g_oled_init_done = false;
-static uint8_t g_oled_max_char;
-static uint8_t g_oled_max_line;
+
 static bool g_splash_active = true;
 static bool g_splash_rendered = false;
 static uint32_t g_splash_start_ms = 0;
 static uint32_t g_user_ontime = 0;
 static uint16_t g_last_keycode = KC_NO;
-static uint8_t g_leftkeys_pressed = 0;
-static uint8_t g_rightkeys_pressed = 0;
-static uint32_t g_press_left = 0;
-static uint32_t g_press_right = 0;
+// static uint8_t g_leftkeys_pressed = 0;
+// static uint8_t g_rightkeys_pressed = 0;
+// static uint32_t g_press_left = 0;
+// static uint32_t g_press_right = 0;
+// static const char *const *current_bongo_anim_frames = BONGO_IDLE;
+
 static oled_state_m2s_t g_remote_oled_state = { true };
 static presses_m2s_t g_remote_presses = {0, 0};
-static const char *const *current_bongo_anim_frames = BONGO_IDLE;
+static eeprom_data_t g_remote_data;
+
+
+/*--------------------------------------
+                    ENCODER
+----------------------------------------*/
+static uint8_t l_enc_layer = _EC_L_VOLUME;
+static uint32_t l_enc_sync_time = 0;
+
+static bool l_enc_pressed = false;
+static uint32_t l_enc_timer = 0;
+
+static bool r_enc_pressed = false;
+static uint32_t r_enc_timer = 0;
+/*--------------------------------------*/
+
+eeprom_data_t* get_config(void) {
+    if (is_keyboard_master()) {
+        return &g_data;
+    } else {
+        return &g_remote_data;
+    }
+}
 
 static inline pin_t get_charge_pump_enable_pin(void) {
     return GP20;
-}
-
-void oled_blit_16x16_P(const char *icon, uint8_t x, uint8_t page) {
-    for (uint8_t i = 0; i < 16; i++) {
-        char top = pgm_read_byte(&icon[i]);         // column i, top 8 pixels
-        char bot = pgm_read_byte(&icon[16 + i]);    // column i, bottom 8 pixels
-
-        oled_write_raw_byte(top, page       * OLED_WIDTH + x + i);
-        oled_write_raw_byte(bot, (page + 1) * OLED_WIDTH + x + i);
-    }
-}
-
-void oled_blit_24x24_P(const char *icon, uint8_t x, uint8_t page) {
-    for (uint8_t i = 0; i < 24; i++) {
-        char top = pgm_read_byte(&icon[i]);         // column i, top 8 pixels
-        char mid = pgm_read_byte(&icon[24 + i]);    // column i, middle 8 pixels
-        char bot = pgm_read_byte(&icon[48 + i]);    // column i, bottom 8 pixels
-
-        oled_write_raw_byte(top, page       * OLED_WIDTH + x + i);
-        oled_write_raw_byte(mid, (page + 1) * OLED_WIDTH + x + i);
-        oled_write_raw_byte(bot, (page + 2) * OLED_WIDTH + x + i);
-    }
 }
 
 uint16_t unwrap_keycode(uint16_t kc) {
@@ -202,87 +188,6 @@ uint16_t unwrap_keycode(uint16_t kc) {
     return kc;
 }
 
-uint16_t get_current_dwpm(void) {
-    const uint8_t wpm = get_current_wpm();
-    uint16_t dwpm = (uint16_t)wpm * 10u;
-    return dwpm;
-}
-
-uint8_t round_percentage(float x) {
-    float f = x + 0.5f;
-    uint8_t r = (uint8_t)f;
-    if ((f - (float)r) == 0.0f && (r & 1)) {
-        r--; // round half to even
-    }
-    return r;
-}
-
-void oled_print_right_aligned(const char *text, const uint8_t width) {
-    uint8_t len = strlen(text);
-    uint8_t pad = (len < width) ? (width - len) : 0;
-    for (uint8_t i = 0; i < pad; i++) {
-        oled_write_P(PSTR(" "), false);
-    }
-    oled_write(text, false);
-}
-
-void print_current_layer(uint8_t row) {
-    char layer_str[8];
-    switch (get_highest_layer(layer_state)) {
-        case _BASE:
-            strcpy(layer_str, "B");
-            break;
-        case _LOWER:
-            strcpy(layer_str, "L");
-            break;
-        case _RAISE:
-            strcpy(layer_str, "R");
-            break;
-        default:
-            // TODO: consider remove snprintf
-            snprintf(layer_str, sizeof(layer_str), "%d", get_highest_layer(layer_state));
-    }
-
-    oled_set_cursor(0, row);
-    oled_print_right_aligned(layer_str, g_oled_max_char);
-}
-
-void print_uptime(uint8_t row) {
-    uint32_t time_ms = timer_read32();
-    uint32_t total_min = time_ms / 60000u;
-    uint32_t hours = total_min / 60u;
-    uint32_t minutes = total_min % 60u;
-    if (hours > 999u) {
-        hours = 999u;
-        minutes = 59u;
-    }
-
-    // TODO: consider remove snprintf
-    char buf[8];
-    snprintf(buf, sizeof(buf), "%3luh%02lum", hours, minutes);
-    oled_set_cursor(0, row);
-    oled_print_right_aligned(buf, g_oled_max_char);
-}
-
-void print_wpm(uint8_t row) {
-    uint16_t wpm = get_current_dwpm();
-    uint16_t wpm_int = wpm / 10u;
-    uint16_t wpm_frac = wpm % 10u;
-
-    // TODO: consider remove snprintf
-    char buf[11];
-    snprintf(buf, sizeof(buf), "%3u.%1u WPM", wpm_int, wpm_frac);
-    oled_set_cursor(0, row);
-    oled_print_right_aligned(buf, g_oled_max_char);
-}
-
-void print_balance(uint8_t row, uint8_t pct) {
-    // TODO: consider remove snprintf
-    char buf[6];
-    snprintf(buf, sizeof(buf), "%3u %%", pct);
-    oled_set_cursor(0, row);
-    oled_print_right_aligned(buf, g_oled_max_char);
-}
 
 void render_splash(void) {
     if (g_splash_rendered) {
@@ -316,6 +221,14 @@ static void user_sync_presses_slave(uint8_t in_len, const void* in_data,
     }
 }
 
+static void user_sync_config_slave(uint8_t in_len, const void* in_data,
+                                   uint8_t out_len, void* out_data) {
+    if (in_len >= sizeof(config_sync_t)) {
+        const config_sync_t* p = (const config_sync_t*)in_data;
+        g_remote_data = p->data;
+    }
+}
+
 void keyboard_post_init_user(void) {
     pin_t dsp_pen_pin = get_charge_pump_enable_pin();
     gpio_set_pin_output(dsp_pen_pin);
@@ -329,19 +242,80 @@ void keyboard_post_init_user(void) {
     if (!is_keyboard_master()) {
         wait_ms(90); // wait for master to be ready
     }
+
+    transaction_register_rpc(USER_SYNC_CONFIG, user_sync_config_slave);
+    storage_init();
+    menu_init();
 }
 
 void housekeeping_task_user(void) {
     if (is_keyboard_master()) {
-        static uint32_t last_sync = 0;
-        if (timer_elapsed32(last_sync) > 50) {
+        static uint32_t last_oled_sync = 0;        
+        uint32_t curr_timer = timer_read32();
+
+        if (timer_elapsed32(last_oled_sync) > 50) {
             oled_state_m2s_t oled_state_pkt = { is_oled_on() };
             (void)transaction_rpc_send(
                 USER_SYNC_OLED_STATE, sizeof(oled_state_pkt), &oled_state_pkt
             );
-            last_sync = timer_read32();
+            last_oled_sync = curr_timer;
+        }
+
+        //ENCODER_RESET_TIMEOUT_USER
+        uint32_t encsync = timer_elapsed32(l_enc_sync_time);    
+        if (encsync > ENCODER_RESET_TIMEOUT_USER) {
+            l_enc_layer = _EC_L_VOLUME;
+            l_enc_sync_time = curr_timer;
         }
     }
+
+    
+    static uint32_t last_config_sync = 0;
+    if (timer_elapsed32(last_config_sync) > 200) {
+        config_sync_t pkt = { g_data };
+        transaction_rpc_send(USER_SYNC_CONFIG, sizeof(pkt), &pkt);
+        last_config_sync = timer_read32();
+    }
+}
+
+bool encoder_update_user(uint8_t index, bool clockwise) {
+    //update last pressed encoder timer
+    l_enc_sync_time = timer_read32();
+    const bool is_left_encoder = index == 0;
+
+    if (is_left_encoder) {
+        switch (l_enc_layer){
+            case _EC_L_VOLUME:
+                if (clockwise) {
+                    tap_code(KC_VOLU);
+                } else {
+                    tap_code(KC_VOLD);
+                }
+                break;
+            case _EC_L_MEDIA: 
+                if (clockwise) {
+                    tap_code(KC_MNXT);
+                } else { 
+                    tap_code(KC_MPRV);
+                }
+                break;
+             case _EC_L_ZOOM: 
+                if (clockwise) {
+                    tap_code16(C(KC_PPLS));
+                } else { 
+                    tap_code16(C(KC_PMNS));
+                }
+                break;
+            default:
+                break;
+        }
+    } else {
+        if (menu_is_active()) {
+            menu_encoder_rotate(clockwise);
+            return false;
+        }
+    }
+    return false;
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -351,8 +325,23 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     bool is_left_side = (row < MATRIX_ROWS / 2);
 
     if (record->event.pressed) {
+        /*--------------------------------------
+                         ENCODER
+        ----------------------------------------*/
+        switch (keycode) {
+            case KC_F13:
+                l_enc_pressed = true;
+                l_enc_timer = timer_read32();                
+                break;
+            case KC_F14:
+                r_enc_pressed = true;
+                r_enc_timer = timer_read32();
+                break;
+            default:
+                break;
+        }       
+        /*--------------------------------------*/
         g_last_keycode = keycode;
-
         if (is_left_side) {
             g_press_left++;
             g_leftkeys_pressed++;
@@ -373,7 +362,47 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             g_leftkeys_pressed--;
         } else if (!is_left_side && g_rightkeys_pressed > 0) {
             g_rightkeys_pressed--;            
-        }           
+        }
+
+        /*--------------------------------------
+                         ENCODER
+        ----------------------------------------*/
+        switch (keycode) {
+            case KC_F13: //Left encoder             
+                if (timer_elapsed32(l_enc_timer) > 500) {
+                    if (l_enc_layer >= _EC_L_ZOOM) {
+                        l_enc_layer = _EC_L_VOLUME;
+                    } else {
+                        l_enc_layer++;
+                    }      
+                } else {
+                    switch (l_enc_layer) {
+                        case _EC_L_MEDIA:
+                            tap_code(KC_MPLY);
+                            break;
+                        
+                        default:
+                            tap_code(KC_MUTE);
+                            break;
+                    }
+                    return false;
+                }
+                l_enc_pressed = false;
+                break;
+            case KC_F14: //Right encoder
+                if (timer_elapsed32(r_enc_timer) > 500) {
+                    menu_enter();
+                } else {
+                    if (menu_is_active()) {
+                        menu_encoder_press();
+                    }
+                }
+                r_enc_pressed = false;
+                break;
+            default:
+                break;
+        }       
+        /*--------------------------------------*/        
     }
     return true;
 }
@@ -441,26 +470,16 @@ bool oled_post_init(void) {
     return false;
 }
 
-void render_bongo(void) {
-    oled_set_cursor(0,13);
-    oled_write_P(BONGO_R1, false);
+// void render_bongo_cat(void) {
+//     oled_set_cursor(0,13);
+//     oled_write_P(BONGO_R1, false);
 
-    for(int i = 0; i < 2; i++) {
-        const char *frame = (const char *)pgm_read_ptr(&current_bongo_anim_frames[i]);
-        oled_set_cursor(0, 14 + i);
-        oled_write_P(frame, false);
-    }
-}
-
-uint8_t render_split_balance(const uint32_t *presses_qt, const char *side, const uint32_t *total ) {   
-    uint8_t pct_calc = round_percentage((100.0f * (*presses_qt)) / (*total));
-
-    oled_set_cursor(0, 7);
-    oled_write_P(side, false);
-    print_balance(8, pct_calc);
-
-    return 9;
-}
+//     for(int i = 0; i < 2; i++) {
+//         const char *frame = (const char *)pgm_read_ptr(&current_bongo_anim_frames[i]);
+//         oled_set_cursor(0, 14 + i);
+//         oled_write_P(frame, false);
+//     }
+// }
 
 bool oled_task_user(void) {
     // perform custom initialisation once
@@ -476,16 +495,6 @@ bool oled_task_user(void) {
             render_splash();
         }
         return false;
-    }
-
-    // sync key presses
-    uint32_t  local_presses_left, local_presses_right;
-    if (is_keyboard_master()) {
-        local_presses_left = g_press_left;
-        local_presses_right = g_press_right;
-    } else {
-        local_presses_left = g_remote_presses.left;
-        local_presses_right = g_remote_presses.right;
     }
 
     const uint32_t idle_time = timer_elapsed32(g_user_ontime);
@@ -518,78 +527,75 @@ bool oled_task_user(void) {
         }
     }
 
-    uint32_t total = local_presses_left + local_presses_right;
-    if (total == 0) {
-        total = 1;  // avoid div by 0
-    }
-    // uint8_t pct_left = round_percentage((100.0f * local_presses_left) / total);
-    // uint8_t pct_right = round_percentage((100.0f * local_presses_right) / total);
-
     if (is_keyboard_left()) {
-        // uint8_t current_column = 0;
-        // Layer state
-        // oled_set_cursor(0, 0);
-        // oled_write_P(PSTR("Layer:"), false);
-        // print_current_layer(0);
+        widgets_render(_SCR_LEFT);
+        // uint8_t curr_row = 0;
+        // render_kbd_locks();
 
-        // Lock status
-        led_t led_state = host_keyboard_led_state();
-        if (led_state.num_lock) {
-            oled_blit_16x16_P(NUM_LOCK_BITMAP, 0, 0);
-        } else {
-            oled_blit_16x16_P(EMPTY_BITMAP, 0, 0);
-        }
-        if (led_state.caps_lock) {
-            oled_blit_16x16_P(CAPS_LOCK_BITMAP, 24, 0);
-        } else {
-            oled_blit_16x16_P(EMPTY_BITMAP, 24, 0);
-        }
-        if (led_state.scroll_lock) {
-            oled_blit_16x16_P(SCROLL_LOCK_BITMAP, 48, 0);
-        } else {
-            oled_blit_16x16_P(EMPTY_BITMAP, 48, 0);
-        }
+        // curr_row = render_current_layer(2);
+
+        // oled_set_cursor(0, curr_row);
+        // oled_write_P(PSTR("EncLayer:"), false);
+        
+        // oled_set_cursor(0, ++curr_row);
+      
+        // snprintf(buf, sizeof(buf), "%1u", l_enc_layer);
+        // oled_print_right_aligned(buf, g_oled_max_char);
+
+        // if (l_enc_layer == _EC_L_OLED_SPECIAL) {
+        //     oled_print_right_aligned(PSTR("SPECIAL"), g_oled_max_char);
+        // } else {
+        //     char buf[4];
+        //     snprintf(buf, sizeof(buf), "%1u", l_enc_layer);
+        //     oled_print_right_aligned(buf, g_oled_max_char);
+        // }
     
-        render_split_balance(&local_presses_left, PSTR("Left:"), &total);
+        
+        // render_split_balance(&local_presses_left, PSTR("Left:"), &total);
+
+
+        // roboeyes_render();
+
+        // render_bongo_cat();
 
         // Last key pressed
         // oled_set_cursor(0, 10);
         // oled_write_P(PSTR("Last Key:"), false);
         // oled_set_cursor(0, 11);
         // const char *keycode_str = get_keycode_string(unwrap_keycode(g_last_keycode));
-        // oled_print_right_aligned(keycode_str, g_oled_max_char);
-
-        render_bongo();
+        // oled_print_right_aligned(keycode_str, g_oled_max_char);       
       
         // QMK logo
-        oled_set_cursor(6, 13);
-        oled_write_P(QMK_LOGO_1, false);
-        oled_set_cursor(6, 14);
-        oled_write_P(QMK_LOGO_2, false);
-        oled_set_cursor(6, 15);
-        oled_write_P(QMK_LOGO_3, false);
+        // oled_set_cursor(6, 13);
+        // oled_write_P(QMK_LOGO_1, false);
+        // oled_set_cursor(6, 14);
+        // oled_write_P(QMK_LOGO_2, false);
+        // oled_set_cursor(6, 15);
+        // oled_write_P(QMK_LOGO_3, false);
 
         // oled_set_cursor(7, 15);
         // oled_write_P(PSTR("QMK"), false);
     } else {
+         if (menu_is_active()) {
+            menu_render();
+            return false;
+        }
+
+        widgets_render(_SCR_RIGHT);
         
         // Uptime (only if oled is on)
-        oled_set_cursor(0, 0);
-        oled_write_P(PSTR("Uptime:"), false);
-        print_uptime(1);
+        // oled_set_cursor(0, 0);
+        // oled_write_P(PSTR("Uptime:"), false);
+        // print_uptime(1);
 
-        // Typing speed
-        oled_set_cursor(0, 3);
-        oled_write_P(PSTR("Avg Speed"), false);
-        oled_set_cursor(0, 4);
-        oled_write_P(PSTR("(25 s):"), false);
-        print_wpm(5);
+        // // Typing speed
+        // oled_set_cursor(0, 3);
+        // oled_write_P(PSTR("Avg Speed"), false);
+        // oled_set_cursor(0, 4);
+        // oled_write_P(PSTR("(25 s):"), false);
+        // print_wpm(5);
 
-        render_split_balance(&local_presses_right, PSTR("Right:"), &total);
-        // split balance
-        // oled_set_cursor(0, 7);
-        // oled_write_P(PSTR("Right:"), false);
-        // print_balance(8, pct_right);
+        // render_split_balance(&local_presses_right, PSTR("Right:"), &total);
 
         // Keebart logo
         oled_blit_24x24_P(KEEBART_BITMAP_24x24, 20, 11);
