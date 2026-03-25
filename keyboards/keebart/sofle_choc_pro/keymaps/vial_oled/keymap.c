@@ -19,82 +19,71 @@ enum layers {
     _RAISE = 2
 };
 
-enum enc_left_layer {
-    _EC_L_VOLUME = 0,
-    _EC_L_MEDIA = 1,
-    _EC_L_ZOOM = 2,
-    _EC_L_OLED_SPECIAL = 3
-};
-
-enum enc_right_layer {
-    _ER_DEFAULT = 0,
-};
-
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /*
  * QWERTY
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * |  `   |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |  Bspc|
+ * |  ESC |   1  |   2  |   3  |   4  |   5  |                    |   6  |  7  |   8  |   9  |   0  | Bspc  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | ESC  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |   \| |
+ * |  Tab |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |   \| |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | Tab  |   A  |   S  |   D  |   F  |   G  |-------.    ,-------|   H  |   J  |   K  |   L  |   ;  |  '"  |
+ * |  lsh |   A  |   S  |   D  |   F  |   G  |-------.    ,-------|   H  |   J  |   K  |   L  |   ;  |  '"  |
  * |------+------+------+------+------+------|  F13  |    | F14   |------+------+------+------+------+------|
- * |LShift|   Z  |   X  |   C  |   V  |   B  |-------|    |-------|   N  |   M  |   ,  |   .  |   /  |RShift|
+ * | LCTR |   Z  |   X  |   C  |   V  |   B  |-------|    |-------|   N  |   M  |   ,  |   .  |   /  | `    |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *            | LCTR | LAlt |- _   |LOWER | /Space  /       \Enter \  |RAISE | =+   | [    |     ] |           
+ *            | mins | win  |LAlt  |LOWER | /Space  /       \Enter \  |RAISE | =+   | [    |     ] |           
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
  */
 
 [_BASE] = LAYOUT_split_4x6_5(
-  KC_GRV,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,  KC_BSPC,
-  KC_ESC,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,  KC_PIPE,
-  KC_TAB,   KC_A,   KC_S,    KC_D,    KC_F,    KC_G,                     KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN,  KC_QUOT,
-  KC_LSFT,  KC_Z,   KC_X,    KC_C,    KC_V,    KC_B, KC_F13,    KC_F14 ,KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,
-                 KC_LCTL,KC_LALT,KC_MINS, TL_LOWR, KC_SPC,      KC_ENT,  TL_UPPR, KC_EQL, KC_LBRC, KC_RBRC
+  KC_ESC,   KC_1,  KC_2,  KC_3,  KC_4,  KC_5,                        KC_6,    KC_7,    KC_8,    KC_9,    KC_0,  KC_BSPC,
+  KC_TAB,   KC_Q,  KC_W,  KC_E,  KC_R,  KC_T,                        KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,  KC_PIPE,
+  KC_LSFT,  KC_A,  KC_S,  KC_D,  KC_F,  KC_G,                        KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN,  KC_QUOT,
+  KC_LCTL,  KC_Z,  KC_X,  KC_C,  KC_V,  KC_B,  KC_F13,     KC_F14,   KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,  KC_GRV,
+            KC_MINS,KC_LWIN,KC_LALT, TL_LOWR, KC_SPC,        KC_ENT, TL_UPPR, KC_EQL,  KC_LBRC, KC_RBRC
 ),
 /* LOWER
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * |      |  F1  |  F2  |  F3  |  F4  |  F5  |                    |      |      |      |      |     |  bks  |
+ * | esc  |  F1  |  F2  |  F3  |  F4  |  F5  |                    |   F6 |  F7  |  f8  |  f9  | f10  | Bspc |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |  esc |   F6 |  F7  |  f8  |  f9  |  f10 |                    |      |      |   up |      |      |      |
+ * | tab  |  f11 |  f12 |      |      |      |                    |      |      |      |      |      |  del |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |   tab|      |     | home  | pgup |  f11 |-------.    ,-------|      |  left|  dwn | right|      |      |
+ * | shift|      |      | pgup |      | home |-------.    ,-------|      | up   |      |      |      |      |
  * |------+------+------+------+------+------|       |    |       |------+------+------+------+------+------|
- * | caps |      |     |  end  | pgdw |   f12|-------|    |-------|      |      |      |      |      | sft  |
+ * | lctrl|      |      | pgdw |      | end  |-------|    |-------| left |  dwn | right|      | ct+le| ct+ri|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
  *            |      |      |      |LOWER | /       /       \      \  |      |      |      |      |
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
- */
+ */   
 [_LOWER] = LAYOUT_split_4x6_5(
-  QK_BOOT,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,                       XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,  XXXXXXX,  _______,
-  _______,    KC_F6,   KC_F7,  KC_F8,    KC_F9,   KC_F10,                       XXXXXXX,    XXXXXXX,    KC_UP,    XXXXXXX,    XXXXXXX,  XXXXXXX,
-  _______, XXXXXXX,   XXXXXXX, KC_HOME,  KC_PGUP, KC_F11,                       XXXXXXX, KC_LEFT, KC_DOWN, KC_RGHT, XXXXXXX, XXXXXXX,
-  KC_CAPS,  XXXXXXX, XXXXXXX, KC_END, KC_PGDN, KC_F12, _______,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______,
-                       _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______
+  KC_ESC,   KC_F1,  KC_F2,   KC_F3,    KC_F4,    KC_F5,                        KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_BSPC,
+  KC_TAB,   KC_F11, KC_F12,  XXXXXXX,  XXXXXXX, XXXXXXX,                       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_DELETE,
+  KC_LSFT,  XXXXXXX, XXXXXXX, KC_PGUP, XXXXXXX, KC_HOME,                       XXXXXXX, KC_UP,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  KC_LCTL,  XXXXXXX, XXXXXXX, KC_PGDN, XXXXXXX, KC_END ,   _______,   _______, KC_LEFT, KC_DOWN, KC_RGHT, XXXXXXX, C(KC_LEFT), C(KC_RIGHT), 
+                    KC_MINS,  KC_LWIN,  KC_LALT, _______, KC_SPC,          KC_ENT, _______, KC_EQL, KC_LBRC, KC_RBRC
 ),
 /* RAISE
  * ,----------------------------------------.                    ,-----------------------------------------.
- * |      |      |      |      |      |      |                    |      |   /  |   *  |   (  |  )   | del  |
+ * |  esc |      |      |      |      | caps |                    |  num |   /  |   *  |   (  |  )   | bks  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |  esc |      |      |      |      |      |                    |      |  7   |  8   |  9   |   -  | ins
+ * |  tab |      |      |      |      |      |                    |      |  7   |  8   |  9   |   -  | del  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |   tab|      |      |      |      |      |-------.    ,-------|      |  4   |  5   |  6   |  +   |      |
+ * | shift|      |      |      |      |      |-------.    ,-------|      |  4   |  5   |  6   |  +   | ins  |
  * |------+------+------+------+------+------|        |   |       |------+------+------+------+------+------|
- * |  shf |      |      |      |      |      |-------|    |-------|   0  |  1   |  2   |  3   |  .   | shft |
+ * |  ctl |      |      |      |      | print|-------|    |-------|   0  |  1   |  2   |  3   |  .   |      |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
  *            |      |      |      |      | /       /       \      \  |RAISE |      |      |      |
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
  */
 [_RAISE] = LAYOUT_split_4x6_5(
-  XXXXXXX, XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX,                           XXXXXXX,  KC_KP_SLASH  , KC_KP_ASTERISK,  KC_LPRN ,  KC_RPRN ,QK_BOOT,//KC_DELETE,
-  _______,  XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX, XXXXXXX,                        KC_PSCR, KC_KP_7, KC_KP_8, KC_KP_9, KC_KP_MINUS, KC_INSERT,
-  _______, XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX, XXXXXXX,                       _______,  KC_KP_4, KC_KP_5, KC_KP_6,  KC_KP_PLUS, _______,
-  _______, XXXXXXX, XXXXXXX, XXXXXXX,XXXXXXX, XXXXXXX,  XXXXXXX,       _______,  KC_KP_0, KC_KP_1, KC_KP_2, KC_KP_3,  KC_KP_DOT, _______,
-                         _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______
+  KC_ESC,  XXXXXXX , XXXXXXX, XXXXXXX, XXXXXXX, KC_CAPS,                        KC_NUM,   KC_KP_SLASH, KC_KP_ASTERISK,  KC_LPRN ,  KC_RPRN , KC_BSPC,
+  KC_TAB,  XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                        XXXXXXX,  KC_KP_7,   KC_KP_8,   KC_KP_9,  KC_KP_MINUS, KC_DELETE ,
+  KC_LSFT, XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                        XXXXXXX,  KC_KP_4,   KC_KP_5,   KC_KP_6,  KC_KP_PLUS, KC_INSERT,
+  KC_LCTL, XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX, KC_PSCR,  _______,    _______,  KC_KP_0,  KC_KP_1,   KC_KP_2,   KC_KP_3,  KC_KP_DOT, XXXXXXX,
+                       KC_MINS, KC_LWIN, KC_LALT, _______, KC_SPC,       KC_ENT, _______, KC_EQL, KC_LBRC, KC_RBRC
 ),
 };
 
@@ -112,7 +101,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 static const uint16_t SPLASH_DURATION_MS = 2500;
 
 #include "transactions.h"
-
 typedef struct {
     bool oled_on;
 } oled_state_m2s_t;
@@ -136,48 +124,22 @@ typedef struct {
 } pressed_keys_m2s_t;
 
 static bool g_oled_init_done = false;
-
 static bool g_splash_active = true;
 static bool g_splash_rendered = false;
 static uint32_t g_splash_start_ms = 0;
 static uint32_t g_user_ontime = 0;
 static uint16_t g_last_keycode = KC_NO;
-// static uint8_t g_leftkeys_pressed = 0;
-// static uint8_t g_rightkeys_pressed = 0;
-// static uint32_t g_press_left = 0;
-// static uint32_t g_press_right = 0;
-// static const char *const *current_bongo_anim_frames = BONGO_IDLE;
-
 static oled_state_m2s_t g_remote_oled_state = { true };
 static presses_m2s_t g_remote_presses = {0, 0};
-// static eeprom_data_t g_remote_data;
-
-
-/*--------------------------------------
-                    ENCODER
-----------------------------------------*/
-static uint8_t l_enc_layer = _EC_L_VOLUME;
-static uint32_t l_enc_sync_time = 0;
-
-static bool l_enc_pressed = false;
-static uint32_t l_enc_timer = 0;
-
-static bool r_enc_pressed = false;
-static uint32_t r_enc_timer = 0;
-/*--------------------------------------*/
-
-// eeprom_data_t* get_config(void) {
-//     if (is_keyboard_master()) {
-//         return &g_data;
-//     } else {
-//         return &g_remote_data;
-//     }
-// }
 
 static inline pin_t get_charge_pump_enable_pin(void) {
     return GP20;
 }
 
+
+/*--------------------------------------------------
+                Custom declarations
+--------------------------------------------------*/
 uint16_t unwrap_keycode(uint16_t kc) {
     if (kc >= QK_MOD_TAP && kc <= QK_MOD_TAP_MAX) {
         return QK_MOD_TAP_GET_TAP_KEYCODE(kc);
@@ -199,6 +161,31 @@ void render_splash(void) {
     g_splash_rendered = true;
 }
 
+uint16_t change_left_encoder_layer(void) {
+    if (timer_elapsed32(l_enc_timer) > 350) {
+        if (l_enc_layer >= _EC_L_ZOOM) {
+            l_enc_layer = _EC_L_VOLUME;
+        } else {
+            l_enc_layer++;
+        }
+    } else {
+        switch (l_enc_layer) {
+            case _EC_L_MEDIA:
+                return KC_MPLY;
+                break;
+            
+            default:
+                return KC_MUTE;
+                break;
+        }   
+    }
+
+    return KC_TRANSPARENT;
+}
+
+/*--------------------------------------------------
+                Implicit declarations
+--------------------------------------------------*/
 static void user_sync_oled_state_slave(uint8_t in_len, const void* in_data,
                                        uint8_t out_len, void* out_data) {
     if (in_len >= sizeof(oled_state_m2s_t)) {
@@ -239,12 +226,12 @@ void keyboard_post_init_user(void) {
     transaction_register_rpc(USER_SYNC_OLED_STATE, user_sync_oled_state_slave);
     transaction_register_rpc(USER_SYNC_LASTKEY, user_sync_lastkey_slave);
     transaction_register_rpc(USER_SYNC_PRESSES, user_sync_presses_slave);
+    transaction_register_rpc(USER_SYNC_CONFIG, user_sync_config_slave);
 
     if (!is_keyboard_master()) {
         wait_ms(90); // wait for master to be ready
     }
-
-    transaction_register_rpc(USER_SYNC_CONFIG, user_sync_config_slave);
+    
     storage_init();
     menu_init();
 }
@@ -283,6 +270,8 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     const bool is_left_encoder = index == 0;
 
     if (is_left_encoder) {
+        
+
         switch (l_enc_layer){
             case _EC_L_VOLUME:
                 if (clockwise) {
@@ -367,26 +356,17 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                          ENCODER
         ----------------------------------------*/
         switch (keycode) {
-            case KC_F13: //Left encoder             
-                if (timer_elapsed32(l_enc_timer) > 500) {
-                    if (l_enc_layer >= _EC_L_ZOOM) {
-                        l_enc_layer = _EC_L_VOLUME;
-                    } else {
-                        l_enc_layer++;
-                    }      
+            case KC_F13: //Left encoder   
+                if (!l_enc_pressed) {
+                    break;
                 } else {
-                    switch (l_enc_layer) {
-                        case _EC_L_MEDIA:
-                            tap_code(KC_MPLY);
-                            break;
-                        
-                        default:
-                            tap_code(KC_MUTE);
-                            break;
+                    l_enc_pressed = false;
+                    uint16_t key_to_tap = change_left_encoder_layer();
+                    if (key_to_tap != KC_TRANSPARENT) {
+                        tap_code(key_to_tap);
+                        return false;
                     }
-                    return false;
-                }
-                l_enc_pressed = false;
+                }                                
                 break;
             case KC_F14: //Right encoder
                 if (timer_elapsed32(r_enc_timer) > 500) {
@@ -468,17 +448,6 @@ bool oled_post_init(void) {
     }
     return false;
 }
-
-// void render_bongo_cat(void) {
-//     oled_set_cursor(0,13);
-//     oled_write_P(BONGO_R1, false);
-
-//     for(int i = 0; i < 2; i++) {
-//         const char *frame = (const char *)pgm_read_ptr(&current_bongo_anim_frames[i]);
-//         oled_set_cursor(0, 14 + i);
-//         oled_write_P(frame, false);
-//     }
-// }
 
 bool oled_task_user(void) {
     // perform custom initialisation once

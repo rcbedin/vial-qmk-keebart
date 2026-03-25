@@ -14,3 +14,18 @@ uint32_t g_press_right = 0;
 
 uint8_t g_leftkeys_pressed = 0;
 uint8_t g_rightkeys_pressed = 0;
+
+
+
+/*--------------------------------------
+                    ENCODER
+----------------------------------------*/
+uint8_t l_enc_layer = _EC_L_VOLUME;
+uint32_t l_enc_sync_time = 0;
+
+bool l_enc_pressed = false;
+uint32_t l_enc_timer = 0;
+
+bool r_enc_pressed = false;
+uint32_t r_enc_timer = 0;
+/*--------------------------------------*/

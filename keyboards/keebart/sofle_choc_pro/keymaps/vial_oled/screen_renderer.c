@@ -70,7 +70,7 @@ uint8_t widget_uptime(uint8_t start_row) {
     oled_set_cursor(0, start_row++);
     oled_print_right_aligned(buf, g_oled_max_char);
 
-    return start_row;
+    return start_row++;
 }
 
 uint8_t widget_avg_speed(uint8_t start_row) {
@@ -79,18 +79,7 @@ uint8_t widget_avg_speed(uint8_t start_row) {
     oled_set_cursor(0, start_row++);
     oled_write_P(PSTR("(25 s):"), false);
 
-    // const uint8_t wpm      = get_current_wpm();
-    uint16_t      wpm      = (uint16_t)get_current_wpm() * 10u;
-    uint16_t      wpm_int  = wpm / 10u;
-    uint16_t      wpm_frac = wpm % 10u;
-
-    // TODO: consider remove snprintf
-    char buf[11];
-    snprintf(buf, sizeof(buf), "%3u.%1u WPM", wpm_int, wpm_frac);
-    oled_set_cursor(0, start_row++);
-    oled_print_right_aligned(buf, g_oled_max_char);
-
-    return start_row;
+    return start_row++;
 }
 
 uint8_t widget_wpm(uint8_t start_row) {
@@ -104,7 +93,7 @@ uint8_t widget_wpm(uint8_t start_row) {
     oled_set_cursor(0, start_row++);
     oled_print_right_aligned(buf, g_oled_max_char);
 
-    return start_row;
+    return start_row++;
 }
 
 uint8_t widget_split_balance(uint8_t start_row, const uint32_t *presses_qt, const char *side) {   
@@ -123,7 +112,7 @@ uint8_t widget_split_balance(uint8_t start_row, const uint32_t *presses_qt, cons
     oled_set_cursor(0, start_row++);
     oled_print_right_aligned(buf, g_oled_max_char);
 
-    return start_row;
+    return start_row++;
 }
 
 uint8_t widget_side_press_percentage(void) {
@@ -134,9 +123,6 @@ uint8_t widget_side_press_percentage(void) {
     //     local_presses_left = g_remote_presses.left;
     //     local_presses_right = g_remote_presses.right;
     // }
-
-
-    
     // uint32_t total = local_presses_left + local_presses_right;
     // if (total == 0) {
     //     total = 1;  // avoid div by 0
@@ -146,6 +132,32 @@ uint8_t widget_side_press_percentage(void) {
     return 0;
 }
 
+
+void widget_left_encoder_layer(uint8_t start_row){
+    oled_set_cursor(0,start_row++);
+
+    switch(l_enc_layer) {
+        case _EC_L_VOLUME: 
+            oled_write_P(PSTR("Volume"), false);
+            oled_set_cursor(0,start_row++);
+            oled_print_right_aligned(PSTR("[-] [+]"), g_oled_max_char);
+            // oled_write_P(BONGO_R1, false);
+            break;
+        case _EC_L_MEDIA:
+            oled_write_P(PSTR("Media"), false);
+            oled_set_cursor(0,start_row++);
+            oled_print_right_aligned(PSTR("[<] [>]"), g_oled_max_char);
+            break;
+
+        case _EC_L_ZOOM: 
+            oled_write_P(PSTR("Zoom"), false);
+            oled_set_cursor(0,start_row++);
+            oled_print_right_aligned(PSTR("[-] [+]"), g_oled_max_char);
+            break;
+        default: 
+        break;
+    }
+}
 
 uint8_t widget_bongo_cat(uint8_t start_row) {
     oled_set_cursor(0,start_row++);
@@ -170,16 +182,18 @@ void widgets_render(e_oled_screen screen) {
         case _SCR_LEFT:
             widget_kbd_lock();
             widget_current_layer(2);
+            widget_left_encoder_layer(5);
 
+            widget_split_balance(9, &local_presses_left, PSTR("Left:"));
             widget_bongo_cat(13);
             break;
         case _SCR_RIGHT:
         
             uint8_t curr_row = 0;
-            curr_row = widget_uptime(curr_row);
-            curr_row = widget_avg_speed(curr_row);
-            curr_row = widget_wpm(curr_row);
-            curr_row = widget_split_balance(curr_row, &local_presses_right, PSTR("Right:"));
+            widget_uptime(0);
+            widget_avg_speed(4);
+            widget_wpm(6);
+            widget_split_balance(9, &local_presses_right, PSTR("Right:"));
             break;
 
         default:
