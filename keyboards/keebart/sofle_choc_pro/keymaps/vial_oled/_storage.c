@@ -5,8 +5,11 @@
 #define EEPROM_VERSION 1
 
 // #define EECONFIG_USER_DATA ((uint32_t*)EECONFIG_USER)
-
+eeprom_data_t g_remote_data;
 eeprom_data_t g_data;
+
+uint32_t last_config_sync = 0;
+bool g_config_synced = false;
 
 static void storage_defaults(void) {
     g_data.version = EEPROM_VERSION;

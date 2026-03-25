@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     uint8_t rgb_mode;
@@ -19,6 +20,9 @@ typedef struct {
 } eeprom_data_t;
 
 extern eeprom_data_t g_data;
+extern eeprom_data_t g_remote_data;
+extern uint32_t last_config_sync;
+extern bool g_config_synced;
 
 void storage_init(void);
 void storage_save(void);

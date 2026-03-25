@@ -150,7 +150,7 @@ static uint16_t g_last_keycode = KC_NO;
 
 static oled_state_m2s_t g_remote_oled_state = { true };
 static presses_m2s_t g_remote_presses = {0, 0};
-static eeprom_data_t g_remote_data;
+// static eeprom_data_t g_remote_data;
 
 
 /*--------------------------------------
@@ -166,13 +166,13 @@ static bool r_enc_pressed = false;
 static uint32_t r_enc_timer = 0;
 /*--------------------------------------*/
 
-eeprom_data_t* get_config(void) {
-    if (is_keyboard_master()) {
-        return &g_data;
-    } else {
-        return &g_remote_data;
-    }
-}
+// eeprom_data_t* get_config(void) {
+//     if (is_keyboard_master()) {
+//         return &g_data;
+//     } else {
+//         return &g_remote_data;
+//     }
+// }
 
 static inline pin_t get_charge_pump_enable_pin(void) {
     return GP20;
@@ -226,6 +226,7 @@ static void user_sync_config_slave(uint8_t in_len, const void* in_data,
     if (in_len >= sizeof(config_sync_t)) {
         const config_sync_t* p = (const config_sync_t*)in_data;
         g_remote_data = p->data;
+        g_config_synced = true;
     }
 }
 
@@ -269,9 +270,7 @@ void housekeeping_task_user(void) {
         }
     }
 
-    
-    static uint32_t last_config_sync = 0;
-    if (timer_elapsed32(last_config_sync) > 200) {
+    if (is_keyboard_master() && timer_elapsed32(last_config_sync) > 200) {
         config_sync_t pkt = { g_data };
         transaction_rpc_send(USER_SYNC_CONFIG, sizeof(pkt), &pkt);
         last_config_sync = timer_read32();
@@ -528,74 +527,14 @@ bool oled_task_user(void) {
     }
 
     if (is_keyboard_left()) {
-        widgets_render(_SCR_LEFT);
-        // uint8_t curr_row = 0;
-        // render_kbd_locks();
-
-        // curr_row = render_current_layer(2);
-
-        // oled_set_cursor(0, curr_row);
-        // oled_write_P(PSTR("EncLayer:"), false);
-        
-        // oled_set_cursor(0, ++curr_row);
-      
-        // snprintf(buf, sizeof(buf), "%1u", l_enc_layer);
-        // oled_print_right_aligned(buf, g_oled_max_char);
-
-        // if (l_enc_layer == _EC_L_OLED_SPECIAL) {
-        //     oled_print_right_aligned(PSTR("SPECIAL"), g_oled_max_char);
-        // } else {
-        //     char buf[4];
-        //     snprintf(buf, sizeof(buf), "%1u", l_enc_layer);
-        //     oled_print_right_aligned(buf, g_oled_max_char);
-        // }
-    
-        
-        // render_split_balance(&local_presses_left, PSTR("Left:"), &total);
-
-
-        // roboeyes_render();
-
-        // render_bongo_cat();
-
-        // Last key pressed
-        // oled_set_cursor(0, 10);
-        // oled_write_P(PSTR("Last Key:"), false);
-        // oled_set_cursor(0, 11);
-        // const char *keycode_str = get_keycode_string(unwrap_keycode(g_last_keycode));
-        // oled_print_right_aligned(keycode_str, g_oled_max_char);       
-      
-        // QMK logo
-        // oled_set_cursor(6, 13);
-        // oled_write_P(QMK_LOGO_1, false);
-        // oled_set_cursor(6, 14);
-        // oled_write_P(QMK_LOGO_2, false);
-        // oled_set_cursor(6, 15);
-        // oled_write_P(QMK_LOGO_3, false);
-
-        // oled_set_cursor(7, 15);
-        // oled_write_P(PSTR("QMK"), false);
+        widgets_render(_SCR_LEFT);        
     } else {
          if (menu_is_active()) {
             menu_render();
             return false;
         }
 
-        widgets_render(_SCR_RIGHT);
-        
-        // Uptime (only if oled is on)
-        // oled_set_cursor(0, 0);
-        // oled_write_P(PSTR("Uptime:"), false);
-        // print_uptime(1);
-
-        // // Typing speed
-        // oled_set_cursor(0, 3);
-        // oled_write_P(PSTR("Avg Speed"), false);
-        // oled_set_cursor(0, 4);
-        // oled_write_P(PSTR("(25 s):"), false);
-        // print_wpm(5);
-
-        // render_split_balance(&local_presses_right, PSTR("Right:"), &total);
+        widgets_render(_SCR_RIGHT);        
 
         // Keebart logo
         oled_blit_24x24_P(KEEBART_BITMAP_24x24, 20, 11);
