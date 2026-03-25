@@ -14,66 +14,66 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /*
  * QWERTY
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * |  `   |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |  `   |
+ * |  `   |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |  Bspc|
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | ESC  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  | Bspc |
+ * | ESC  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |   \| |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | Tab  |   A  |   S  |   D  |   F  |   G  |-------.    ,-------|   H  |   J  |   K  |   L  |   ;  |  '   |
- * |------+------+------+------+------+------|  MUTE |    | PAUSE |------+------+------+------+------+------|
+ * | Tab  |   A  |   S  |   D  |   F  |   G  |-------.    ,-------|   H  |   J  |   K  |   L  |   ;  |  '"  |
+ * |------+------+------+------+------+------|  F13  |    | F14   |------+------+------+------+------+------|
  * |LShift|   Z  |   X  |   C  |   V  |   B  |-------|    |-------|   N  |   M  |   ,  |   .  |   /  |RShift|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *            | LGUI | LAlt | LCTR |LOWER | /Enter  /       \Space \  |RAISE | RCTR | RAlt | RGUI |
+ *            | LCTR | LAlt |- _   |LOWER | /Space  /       \Enter \  |RAISE | =+   | [    |     ] |           
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
  */
 
 [_BASE] = LAYOUT_split_4x6_5(
-  KC_GRV,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,  KC_GRV,
-  KC_ESC,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,  KC_BSPC,
+  KC_GRV,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,  KC_BSPC,
+  KC_ESC,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,  KC_PIPE,
   KC_TAB,   KC_A,   KC_S,    KC_D,    KC_F,    KC_G,                     KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN,  KC_QUOT,
-  KC_LSFT,  KC_Z,   KC_X,    KC_C,    KC_V,    KC_B, KC_MUTE,    KC_MPLY,KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,
-                 KC_LGUI,KC_LALT,KC_LCTL, TL_LOWR, KC_ENT,      KC_SPC,  TL_UPPR, KC_RCTL, KC_RALT, KC_RGUI
+  KC_LSFT,  KC_Z,   KC_X,    KC_C,    KC_V,    KC_B, KC_F13,    KC_F14 ,KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,
+                 KC_LCTL,KC_LALT,KC_MINS, TL_LOWR, KC_SPC,      KC_ENT,  TL_UPPR, KC_EQL, KC_LBRC, KC_RBRC
 ),
 /* LOWER
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * |      |  F1  |  F2  |  F3  |  F4  |  F5  |                    |  F6  |  F7  |  F8  |  F9  | F10  | F11  |
+ * |      |  F1  |  F2  |  F3  |  F4  |  F5  |                    |      |      |      |      |     |  bks  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |  `   |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  | F12  |
+ * |  esc |   F6 |  F7  |  f8  |  f9  |  f10 |                    |      |      |   up |      |      |      |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | Tab  |   !  |   @  |   #  |   $  |   %  |-------.    ,-------|   ^  |   &  |   *  |   (  |   )  |   |  |
+ * |   tab|      |     | home  | pgup |  f11 |-------.    ,-------|      |  left|  dwn | right|      |      |
  * |------+------+------+------+------+------|       |    |       |------+------+------+------+------+------|
- * | Shift|  =   |  -   |  +   |   {  |   }  |-------|    |-------|   [  |   ]  |   ;  |   :  |   \  | Shift|
+ * | caps |      |     |  end  | pgdw |   f12|-------|    |-------|      |      |      |      |      | sft  |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *            | LGUI | LAlt | LCTR |LOWER | /Enter  /       \Space \  |RAISE | RCTR | RAlt | RGUI |
+ *            |      |      |      |LOWER | /       /       \      \  |      |      |      |      |
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
  */
 [_LOWER] = LAYOUT_split_4x6_5(
-  _______,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,                       KC_F6,   KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,
-  KC_GRV,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                       KC_6,    KC_7,    KC_8,    KC_9,    KC_0,  KC_F12,
-  _______, KC_EXLM,   KC_AT, KC_HASH,  KC_DLR, KC_PERC,                       KC_CIRC, KC_AMPR, KC_ASTR, KC_LPRN, KC_RPRN, KC_PIPE,
-  _______,  KC_EQL, KC_MINS, KC_PLUS, KC_LCBR, KC_RCBR, _______,       _______, KC_LBRC, KC_RBRC, KC_SCLN, KC_COLN, KC_BSLS, _______,
+  _______,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,                       XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,  XXXXXXX,  _______,
+  _______,    KC_F6,   KC_F7,  KC_F8,    KC_F9,   KC_F10,                       XXXXXXX,    XXXXXXX,    KC_UP,    XXXXXXX,    XXXXXXX,  XXXXXXX,
+  _______, XXXXXXX,   XXXXXXX, KC_HOME,  KC_PGUP, KC_F11,                       XXXXXXX, KC_LEFT, KC_DOWN, KC_RGHT, XXXXXXX, XXXXXXX,
+  KC_CAPS,  XXXXXXX, XXXXXXX, KC_END, KC_PGDN, KC_F12, _______,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______,
                        _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______
 ),
 /* RAISE
  * ,----------------------------------------.                    ,-----------------------------------------.
- * |      |      |      |      |      |      |                    |      |      |      |      |      |      |
+ * |      |      |      |      |      |      |                    |      |   /  |   *  |   (  |  )   | del  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | Esc  | Ins  | Pscr | Menu |      |      |                    |      |      |  Up  |      | DLine| Bspc |
+ * |  esc |      |      |      |      |      |                    |      |  7   |  8   |  9   |   -  | ins
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * | Tab  | LAt  | LCtl |LShift|      | Caps |-------.    ,-------|      | Left | Down | Rigth|  Del | Bspc |
- * |------+------+------+------+------+------|        |    |       |------+------+------+------+------+------|
- * |Shift | Undo |  Cut | Copy | Paste|      |-------|    |-------|      |      |      |      |      | Shift|
+ * |   tab|      |      |      |      |      |-------.    ,-------|      |  4   |  5   |  6   |  +   |      |
+ * |------+------+------+------+------+------|        |   |       |------+------+------+------+------+------|
+ * |  shf |      |      |      |      |      |-------|    |-------|   0  |  1   |  2   |  3   |  .   | shft |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *            | LGUI | LAlt | LCTR |LOWER | /Enter  /       \Space \  |RAISE | RCTR | RAlt | RGUI |
+ *            |      |      |      |      | /       /       \      \  |RAISE |      |      |      |
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
  */
 [_RAISE] = LAYOUT_split_4x6_5(
-  _______, _______ , _______ , _______ , _______ , _______,                           _______,  _______  , _______,  _______ ,  _______ ,_______,
-  _______,  KC_INS,  KC_PSCR,   KC_APP,  XXXXXXX, XXXXXXX,                        KC_PGUP, XXXXXXX,   KC_UP, XXXXXXX,C(KC_BSPC), KC_BSPC,
-  _______, KC_LALT,  KC_LCTL,  KC_LSFT,  XXXXXXX, KC_CAPS,                       KC_PGDN,  KC_LEFT, KC_DOWN, KC_RGHT,  KC_DEL, KC_BSPC,
-  _______, C(KC_Z), C(KC_X), C(KC_C), C(KC_V), XXXXXXX,  _______,       _______,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,   XXXXXXX, _______,
+  XXXXXXX, XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX,                           XXXXXXX,  KC_KP_SLASH  , KC_KP_ASTERISK,  KC_LPRN ,  KC_RPRN, KC_DELETE,//,QK_BOOT,//KC_DELETE,
+  _______,  XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX, XXXXXXX,                        KC_PSCR, KC_KP_7, KC_KP_8, KC_KP_9, KC_KP_MINUS, KC_INSERT,
+  _______, XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX, XXXXXXX,                       _______,  KC_KP_4, KC_KP_5, KC_KP_6,  KC_KP_PLUS, _______,
+  _______, XXXXXXX, XXXXXXX, XXXXXXX,XXXXXXX, XXXXXXX,  XXXXXXX,       _______,  KC_KP_0, KC_KP_1, KC_KP_2, KC_KP_3,  KC_KP_DOT, _______,
                          _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______
 ),
 };
@@ -550,6 +550,25 @@ bool oled_task_user(void) {
             oled_blit_16x16_P(EMPTY_BITMAP, 48, 0);
         }
     
+        oled_set_cursor(0, 2);
+
+        switch (get_highest_layer(layer_state)) {
+            case _BASE:
+                oled_write_P(BASE_LAYER_BMP, false);
+                break;
+            case _LOWER:
+                oled_write_P(LOWER_LAYER_BMP, false);
+                break;
+            case _RAISE:
+                oled_write_P(UPPER_LAYER_BMP, false);
+                break;
+            default:
+                // TODO: mmake something with other layers that we could have
+                oled_write_P(BASE_LAYER_BMP, false);
+                // TODO: consider remove snprintf
+                // snprintf(layer_str, sizeof(layer_str), "%d", get_highest_layer(layer_state));
+        }
+
         render_split_balance(&local_presses_left, PSTR("Left:"), &total);
 
         // Last key pressed
@@ -562,12 +581,12 @@ bool oled_task_user(void) {
         render_bongo();
       
         // QMK logo
-        oled_set_cursor(6, 13);
-        oled_write_P(QMK_LOGO_1, false);
-        oled_set_cursor(6, 14);
-        oled_write_P(QMK_LOGO_2, false);
-        oled_set_cursor(6, 15);
-        oled_write_P(QMK_LOGO_3, false);
+        // oled_set_cursor(6, 13);
+        // oled_write_P(QMK_LOGO_1, false);
+        // oled_set_cursor(6, 14);
+        // oled_write_P(QMK_LOGO_2, false);
+        // oled_set_cursor(6, 15);
+        // oled_write_P(QMK_LOGO_3, false);
 
         // oled_set_cursor(7, 15);
         // oled_write_P(PSTR("QMK"), false);
