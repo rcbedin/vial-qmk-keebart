@@ -189,7 +189,7 @@ void widgets_render(e_oled_screen screen) {
             break;
         case _SCR_RIGHT:
         
-            uint8_t curr_row = 0;
+            
             widget_uptime(0);
             widget_avg_speed(4);
             widget_wpm(6);
