@@ -6,7 +6,6 @@
 #include "_utils.h"
 #include "_globals.h"
 #include "animations/bongo_cat.h"
-#include "animations/bongo_cat_bitmaps.h"
 
 enum layers { _BASE = 0, _LOWER = 1, _RAISE = 2 };
 
@@ -68,7 +67,7 @@ uint8_t widget_uptime(uint8_t start_row) {
     char buf[8];
     snprintf(buf, sizeof(buf), "%3luh%02lum", hours, minutes);
     oled_set_cursor(0, start_row++);
-    oled_print_right_aligned(buf, g_oled_max_char);
+    oled_print_right_aligned(buf, get_oled_limit('c'));
 
     return start_row++;
 }
@@ -91,13 +90,16 @@ uint8_t widget_wpm(uint8_t start_row) {
     char buf[11];
     snprintf(buf, sizeof(buf), "%3u.%1u WPM", wpm_int, wpm_frac);
     oled_set_cursor(0, start_row++);
-    oled_print_right_aligned(buf, g_oled_max_char);
+    oled_print_right_aligned(buf, get_oled_limit('c'));
 
     return start_row++;
 }
 
 uint8_t widget_split_balance(uint8_t start_row, const uint32_t *presses_qt, const char *side) {   
-    uint32_t total = local_presses_left + local_presses_right;
+    // uint32_t total = get_presses('l') + get_presses('r');
+    presses_m2s_t presses = get_total_presses_count();
+    uint32_t total = presses.left + presses.right;
+
     if (total == 0) {
         total = 1;  // avoid div by 0
     }
@@ -110,28 +112,10 @@ uint8_t widget_split_balance(uint8_t start_row, const uint32_t *presses_qt, cons
     char buf[6];
     snprintf(buf, sizeof(buf), "%3u %%", pct_calc);
     oled_set_cursor(0, start_row++);
-    oled_print_right_aligned(buf, g_oled_max_char);
+    oled_print_right_aligned(buf, get_oled_limit('c'));
 
     return start_row++;
 }
-
-uint8_t widget_side_press_percentage(void) {
-     // if (is_keyboard_master()) {
-    //     local_presses_left = g_press_left;
-    //     local_presses_right = g_press_right;
-    // } else {
-    //     local_presses_left = g_remote_presses.left;
-    //     local_presses_right = g_remote_presses.right;
-    // }
-    // uint32_t total = local_presses_left + local_presses_right;
-    // if (total == 0) {
-    //     total = 1;  // avoid div by 0
-    // }
-    // uint8_t pct_left = round_percentage((100.0f * local_presses_left) / total);
-    // uint8_t pct_right = round_percentage((100.0f * local_presses_right) / total);
-    return 0;
-}
-
 
 void widget_left_encoder_layer(uint8_t start_row){
     oled_set_cursor(0,start_row++);
@@ -140,19 +124,19 @@ void widget_left_encoder_layer(uint8_t start_row){
         case _EC_L_VOLUME: 
             oled_write_P(PSTR("Volume"), false);
             oled_set_cursor(0,start_row++);
-            oled_print_right_aligned(PSTR("[-] [+]"), g_oled_max_char);
+            oled_print_right_aligned(PSTR("[-] [+]"), get_oled_limit('c'));
             // oled_write_P(BONGO_R1, false);
             break;
         case _EC_L_MEDIA:
             oled_write_P(PSTR("Media"), false);
             oled_set_cursor(0,start_row++);
-            oled_print_right_aligned(PSTR("[<] [>]"), g_oled_max_char);
+            oled_print_right_aligned(PSTR("[<] [>]"), get_oled_limit('c'));
             break;
 
         case _EC_L_ZOOM: 
             oled_write_P(PSTR("Zoom"), false);
             oled_set_cursor(0,start_row++);
-            oled_print_right_aligned(PSTR("[-] [+]"), g_oled_max_char);
+            oled_print_right_aligned(PSTR("[-] [+]"), get_oled_limit('c'));
             break;
         default: 
         break;
@@ -160,13 +144,9 @@ void widget_left_encoder_layer(uint8_t start_row){
 }
 
 uint8_t widget_bongo_cat(uint8_t start_row) {
-    oled_set_cursor(0,start_row++);
-    oled_write_P(BONGO_R1, false);
-
-    for(int i = 0; i < 2; i++) {
-        const char *frame = (const char *)pgm_read_ptr(&current_bongo_anim_frames[i]);
+    for (int i = 0; i < 3; i++) {
         oled_set_cursor(0, start_row + i);
-        oled_write_P(frame, false);
+        oled_write_P(anim_bongocat_get_frame(i), false);
     }
 
     return start_row ;
@@ -177,45 +157,26 @@ void widgets_init(void) {}
 
 void widgets_render(e_oled_screen screen) {
     oled_clear();
+    presses_m2s_t presses = get_total_presses_count();
 
     switch (screen) {
         case _SCR_LEFT:
             widget_kbd_lock();
             widget_current_layer(2);
-            widget_left_encoder_layer(5);
-
-            widget_split_balance(9, &local_presses_left, PSTR("Left:"));
+            widget_left_encoder_layer(5);  
+            widget_split_balance(9, &presses.left, PSTR("Left:"));
             widget_bongo_cat(13);
             break;
         case _SCR_RIGHT:
-        
-            
             widget_uptime(0);
             widget_avg_speed(4);
             widget_wpm(6);
-            widget_split_balance(9, &local_presses_right, PSTR("Right:"));
+            widget_split_balance(9, &presses.right, PSTR("Right:"));
             break;
 
         default:
             break;
     }
-
-    // uint8_t curr_row = 0;
-
-    // oled_set_cursor(0, curr_row);
-    // oled_write_P(PSTR("EncLayer:"), false);
-
-    // oled_set_cursor(0, ++curr_row);
-
-    //  if (l_enc_layer == _EC_L_OLED_SPECIAL) {
-    //     oled_print_right_aligned(PSTR("SPECIAL"), g_oled_max_char);
-    // } else {
-    //     char buf[4];
-    //     snprintf(buf, sizeof(buf), "%1u", l_enc_layer);
-    //     oled_print_right_aligned(buf, g_oled_max_char);
-    // }
-
-    // render_split_balance(&local_presses_left, PSTR("Left:"), &total);
 }
 
 void widgets_add(void) {}

@@ -2,7 +2,7 @@
 #include "eeprom.h"
 
 #define EEPROM_ADDR 0
-#define EEPROM_VERSION 1
+#define EEPROM_VERSION 2
 
 // #define EECONFIG_USER_DATA ((uint32_t*)EECONFIG_USER)
 eeprom_data_t g_remote_data;

@@ -2,17 +2,20 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-extern uint32_t local_presses_left;
-extern uint32_t local_presses_right;
-extern uint8_t g_oled_max_char;
-extern uint8_t g_oled_max_line;
+typedef struct {
+    uint32_t left;
+    uint32_t right;
+} presses_m2s_t;
 
-extern uint32_t g_press_left;
-extern uint32_t g_press_right;
+void init_globals(void);
+void update_oled_limits(void);
+uint8_t get_oled_limit(char id);
 
-extern uint8_t g_leftkeys_pressed;
-extern uint8_t g_rightkeys_pressed;
+presses_m2s_t update_pressed_key_counters(char side, bool pressed);
+void update_remote_presses(presses_m2s_t input);
 
+presses_m2s_t get_total_presses_count(void);
+presses_m2s_t get_current_pressed(void);
 
 /*--------------------------------------
                     ENCODER

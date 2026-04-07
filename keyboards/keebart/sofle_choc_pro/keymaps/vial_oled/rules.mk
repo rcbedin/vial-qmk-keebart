@@ -9,7 +9,6 @@ OLED_DRIVER = ssd1306
 OLED_TRANSPORT = i2c
 WPM_ENABLE = yes
 KEYCODE_STRING_ENABLE = yes
-SRC += roboeyes.c
 SRC += oled_menu.c
 SRC += screen_renderer.c
 SRC += _storage.c
