@@ -7,7 +7,6 @@ static uint8_t g_oled_max_line = 0;
 static uint32_t g_total_press_left = 0;
 static uint32_t g_total_press_right = 0;
 
-
 static uint32_t g_remote_total_press_left = 0;
 static uint32_t g_remote_total_press_right = 0;
 
@@ -83,6 +82,7 @@ presses_m2s_t get_current_pressed(void) {
     return (presses_m2s_t){g_current_leftkeys_pressed, g_current_rightkeys_pressed};
 }
 
+
 /*--------------------------------------
                     ENCODER
 ----------------------------------------*/
@@ -91,7 +91,4 @@ uint32_t l_enc_sync_time = 0;
 
 bool l_enc_pressed = false;
 uint32_t l_enc_timer = 0;
-
-bool r_enc_pressed = false;
-uint32_t r_enc_timer = 0;
 /*--------------------------------------*/

@@ -15,3 +15,4 @@ SRC += _storage.c
 SRC += _utils.c
 SRC += _globals.c
 SRC += animations/bongo_cat.c
+CONSOLE_ENABLE = false

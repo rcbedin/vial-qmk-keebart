@@ -9,6 +9,7 @@
 // #include "roboeyes.h"
 #include "oled_menu.h"
 #include "screen_renderer.h"
+#include "print.h"
 
 #endif
 
@@ -229,7 +230,7 @@ void keyboard_post_init_user(void) {
     init_globals();
     // storage_init();
     anim_bongocat_init(); 
-    // menu_init();
+    menu_init();
 }
 
 void housekeeping_task_user(void) {
@@ -237,7 +238,6 @@ void housekeeping_task_user(void) {
 
     if (is_keyboard_master()) {
 
-        
         if (timer_elapsed32(oled_last_sync) > 50) {
             oled_state_m2s_t oled_state_pkt = { is_oled_on() };
             (void)transaction_rpc_send(
@@ -256,12 +256,10 @@ void housekeeping_task_user(void) {
 }
 
 bool encoder_update_user(uint8_t index, bool clockwise) {
-    //update last pressed encoder timer
-    l_enc_sync_time = timer_read32();
-    g_user_ontime = timer_read32(); 
     const bool is_left_encoder = index == 0;
 
     if (is_left_encoder) {
+        l_enc_sync_time = timer_read32();
         switch (l_enc_layer){
             case _EC_L_VOLUME:
                 if (clockwise) {
@@ -288,7 +286,7 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
                 break;
         }
     } else {
-        if (menu_is_active()) {
+        if (menu_is_active()) {            
             menu_encoder_rotate(clockwise);
             return false;
         } 
@@ -317,6 +315,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     g_user_ontime = timer_read32();
     
+    if (menu_check_keypress(keycode, record->event.pressed)) {
+        //if the menu keypress has handled the event, finish the record_user
+        return false;
+    }
+
     uint8_t row = record->event.key.row;
     bool is_left_side = (row < MATRIX_ROWS / 2);
 
@@ -324,14 +327,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         /*--------------------------------------
                          ENCODER
         ----------------------------------------*/
+     
         switch (keycode) {
             case KC_F13:              
                 l_enc_pressed = true;
                 l_enc_timer = timer_read32();                
-                break;
-            case KC_F14:
-                r_enc_pressed = true;
-                r_enc_timer = timer_read32();
                 break;
             default:
                 break;
@@ -361,7 +361,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
         /*--------------------------------------
                          ENCODER
-        ----------------------------------------*/
+        ----------------------------------------*/      
         switch (keycode) {
             case KC_F13: //Left encoder   
                 if (!l_enc_pressed) {
@@ -374,17 +374,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                         return false;
                     }
                 }                                
-                break;
-            case KC_F14: //Right encoder
-                if (timer_elapsed32(r_enc_timer) > 500) {
-                    menu_enter();
-                } else {
-                    if (menu_is_active()) {
-                        menu_encoder_press();
-                    }
-                }
-                r_enc_pressed = false;
-                break;
+                break;            
             default:
                 break;
         }       
@@ -400,6 +390,7 @@ void matrix_scan_user(void) {
 
     presses_m2s_t current_pressed = get_current_pressed();
     anim_bongocat_update(&current_pressed.left, &current_pressed.right, &g_user_ontime);
+    menu_check_usertime();
 }
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
@@ -471,17 +462,8 @@ bool oled_task_user(void) {
 
     if (is_keyboard_left()) {
         widgets_render(_SCR_LEFT);        
-    } else {
-        if (menu_is_active()) {
-            // Keebart logo
-            menu_render();
-            return false;
-        }
-        
-        widgets_render(_SCR_RIGHT); 
-        oled_blit_24x24_P(KEEBART_BITMAP_24x24, 20, 11);
-        oled_set_cursor(2, 15);
-        oled_write_P(PSTR("KEEBART"), false);
+    } else {        
+        widgets_render(_SCR_RIGHT);       
     }
 
     return false;

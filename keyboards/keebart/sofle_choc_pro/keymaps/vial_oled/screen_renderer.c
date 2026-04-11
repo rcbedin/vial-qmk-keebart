@@ -6,6 +6,7 @@
 #include "_utils.h"
 #include "_globals.h"
 #include "animations/bongo_cat.h"
+#include "oled_menu.h"
 
 enum layers { _BASE = 0, _LOWER = 1, _RAISE = 2 };
 
@@ -152,15 +153,15 @@ uint8_t widget_bongo_cat(uint8_t start_row) {
     return start_row ;
 }
 
-
 void widgets_init(void) {}
 
 void widgets_render(e_oled_screen screen) {
-    oled_clear();
+   
     presses_m2s_t presses = get_total_presses_count();
 
     switch (screen) {
-        case _SCR_LEFT:
+        case _SCR_LEFT: 
+            oled_clear();
             widget_kbd_lock();
             widget_current_layer(2);
             widget_left_encoder_layer(5);  
@@ -168,10 +169,20 @@ void widgets_render(e_oled_screen screen) {
             widget_bongo_cat(13);
             break;
         case _SCR_RIGHT:
-            widget_uptime(0);
-            widget_avg_speed(4);
-            widget_wpm(6);
-            widget_split_balance(9, &presses.right, PSTR("Right:"));
+            oled_clear();
+            if (menu_is_active()) {
+                menu_render();
+            } else {            
+                widget_uptime(0);
+                widget_avg_speed(4);
+                widget_wpm(6);
+                widget_split_balance(9, &presses.right, PSTR("Right:"));
+                
+                 // Keebart logo
+                oled_blit_24x24_P(KEEBART_BITMAP_24x24, 20, 11);
+                oled_set_cursor(2, 15);
+                oled_write_P(PSTR("KEEBART"), false);
+            }
             break;
 
         default:
