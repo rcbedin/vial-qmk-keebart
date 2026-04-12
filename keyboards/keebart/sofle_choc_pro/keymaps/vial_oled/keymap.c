@@ -287,6 +287,7 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
         }
     } else {
         if (menu_is_active()) {            
+            g_user_ontime = timer_read32();
             menu_encoder_rotate(clockwise);
             return false;
         } 
