@@ -103,7 +103,7 @@ static const uint16_t SPLASH_DURATION_MS = 2500;
 #include "transactions.h"
 
 typedef struct {
-    uint32_t oled_on;
+    bool oled_on;
 } oled_state_m2s_t;
 typedef struct {
     uint16_t keycode;
@@ -126,6 +126,7 @@ static uint16_t g_last_keycode = KC_NO;
 
 static uint32_t g_user_ontime;
 static oled_state_m2s_t g_remote_oled_state = { true };
+
 static uint32_t oled_last_sync = 0;
 static inline pin_t get_charge_pump_enable_pin(void) {
     return GP20;
@@ -203,6 +204,18 @@ static void user_sync_presses_slave(uint8_t in_len, const void* in_data,
     }
 }
 
+
+static void user_sync_menu_state(uint8_t in_len, const void* in_data,
+                                    uint8_t out_len, void* out_data) {
+    menu_handle_state_from_remote(in_len, in_data);    
+}
+
+static void user_sync_menu_mov_state(uint8_t in_len, const void* in_data,
+                                    uint8_t out_len, void* out_data) {
+    menu_handle_mov_from_remote(in_len, in_data);
+}
+
+
 // static void user_sync_config_slave(uint8_t in_len, const void* in_data,
 //                                    uint8_t out_len, void* out_data) {
 //     if (in_len >= sizeof(config_sync_t)) {
@@ -212,7 +225,15 @@ static void user_sync_presses_slave(uint8_t in_len, const void* in_data,
 //     }
 // }
 
+void matrix_init_user() {
+    if (!is_keyboard_left()) {
+        menu_init();
+    }
+}
+
 void keyboard_post_init_user(void) {
+    
+
     pin_t dsp_pen_pin = get_charge_pump_enable_pin();
     gpio_set_pin_output(dsp_pen_pin);
     gpio_write_pin_low(dsp_pen_pin);
@@ -221,6 +242,8 @@ void keyboard_post_init_user(void) {
     transaction_register_rpc(USER_SYNC_OLED_STATE, user_sync_oled_state_slave);
     transaction_register_rpc(USER_SYNC_LASTKEY, user_sync_lastkey_slave);
     transaction_register_rpc(USER_SYNC_PRESSES, user_sync_presses_slave);
+    transaction_register_rpc(USER_SYNC_MENU, user_sync_menu_state);
+    transaction_register_rpc(USER_SYNC_MENU_MOV, user_sync_menu_mov_state);
     // transaction_register_rpc(USER_SYNC_CONFIG, user_sync_config_slave);
 
     if (!is_keyboard_master()) {
@@ -230,7 +253,11 @@ void keyboard_post_init_user(void) {
     init_globals();
     // storage_init();
     anim_bongocat_init(); 
-    menu_init();
+    // uprintf("finished post init\n" );    
+}
+
+void rgb_matrix_post_init_user(void) {
+    // rgb_matrix_mode( g_data.menu.rgb_mode );    
 }
 
 void housekeeping_task_user(void) {
@@ -239,7 +266,7 @@ void housekeeping_task_user(void) {
     if (is_keyboard_master()) {
 
         if (timer_elapsed32(oled_last_sync) > 50) {
-            oled_state_m2s_t oled_state_pkt = { is_oled_on() };
+            oled_state_m2s_t oled_state_pkt = { is_oled_on()  };
             (void)transaction_rpc_send(
                 USER_SYNC_OLED_STATE, sizeof(oled_state_pkt), &oled_state_pkt
             );
@@ -315,7 +342,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 
     g_user_ontime = timer_read32();
-    
+
     if (menu_check_keypress(keycode, record->event.pressed)) {
         //if the menu keypress has handled the event, finish the record_user
         return false;
@@ -351,7 +378,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             (void)transaction_rpc_send(USER_SYNC_LASTKEY, sizeof(keycode_pkt), &keycode_pkt);
 
             presses_m2s_t presses_pkt = { total_presses.left, total_presses.right };
-            (void)transaction_rpc_send(USER_SYNC_PRESSES, sizeof(presses_pkt), &presses_pkt);            
+            (void)transaction_rpc_send(USER_SYNC_PRESSES, sizeof(presses_pkt), &presses_pkt);
         }
     } else {
         if (is_left_side) {

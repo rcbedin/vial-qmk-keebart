@@ -3,13 +3,14 @@
 #include "_storage.h"
 #include "_utils.h"
 #include "print.h"
-
+#include "transactions.h"
+#include "_globals.h"
 /*
     CUSTOM DECLARATIONS
 */
 
 static const char *rgb_items[] = {
-    "Back",
+    "< back",
     "alphas_mods",
     "gradient_up_down",
     "gradient_left_right",
@@ -55,8 +56,7 @@ static const char *rgb_items[] = {
     "solid_multisplash",
 };
 
-
-
+static menu_state_t g_state = MENU_OFF;
 static uint8_t g_index = 0;
 static uint32_t g_text_position_timer = 0;
 static uint8_t g_text_first_idx = 0;
@@ -91,17 +91,24 @@ void update_viewport(void) {
         uprintf("g_index: %u, vp_start: %u, vp_end: %u, by_how_much: %u, vp_index_incr: %u \n", g_index, vp_start, vp_end, by_how_much, vp_index_incr);    
     }
 }
+
+void send_state_sync(void) {
+    if(is_keyboard_master()) {
+        menu_sync_m2s_t newstate = {g_state, g_index};
+        (void)transaction_rpc_send(USER_SYNC_MENU, sizeof(newstate), &newstate);
+    }
+}
+
+void send_encoder_sync(encoder_key_event_t event) {
+    if(is_keyboard_master()) {
+        (void)transaction_rpc_send(USER_SYNC_MENU_MOV, sizeof(event), &event);
+    }
+}
+
 /*
     END CUSTOM DECLARATIONS
 */
 
-typedef enum {
-    MENU_OFF,
-    MENU_MAIN,
-    MENU_RGB,
-    MENU_LEFT_ANIM,
-    MENU_RIGHT_ANIM
-} menu_state_t;
 typedef union {
     uint32_t raw;
     struct {
@@ -113,11 +120,8 @@ typedef union {
 } user_config_t;
 
 static user_config_t g_config;
-static menu_state_t g_state = MENU_OFF;
-
 
 static uint8_t g_index_view_from = 0;
-
 static uint32_t key_longpress_time;
 static uint32_t menu_visible_time;
 
@@ -130,12 +134,16 @@ void menu_enter(void) {
     menu_visible_time = timer_read32();
     g_state = MENU_MAIN;
     g_index = 0;
+
+    send_state_sync();  
 }
 
 void menu_exit(void) {
     if (g_state != MENU_OFF) {
         menu_visible_time = 0;
         g_state = MENU_OFF;
+
+        send_state_sync();
     }
 }
 
@@ -155,8 +163,7 @@ void menu_encoder_rotate(bool clockwise) {
         default: return;
     }    
 
-    if (clockwise) {
-        uprintf("g_index: %u, max: %u\n", g_index, max);    
+    if (clockwise) {           
         if ((g_index + 1) >= max) {
             g_index = 0;
         } else {
@@ -173,6 +180,8 @@ void menu_encoder_rotate(bool clockwise) {
     update_viewport();
     g_text_position_timer = timer_read32();
     g_text_first_idx = 0;
+
+    send_encoder_sync(clockwise ? ENC_CLK : ENC_CNTCLK);
 }
 
 void menu_encoder_press(void) {
@@ -195,7 +204,9 @@ void menu_encoder_press(void) {
                 g_state = MENU_MAIN;
                 g_index_view_from = 0; 
             } else {
-                g_config.rgb_mode = g_index - 1;
+                g_data.menu.rgb_mode = g_index - 1;
+                // g_config.rgb_mode = g_index - 1;
+                rgb_matrix_mode(g_index - 1);                
                 storage_save();
             }
             break;
@@ -223,6 +234,8 @@ void menu_encoder_press(void) {
         default:
             break;
     }
+
+    send_encoder_sync(ENC_PRESS);
 }
 
 
@@ -233,7 +246,7 @@ void menu_render(void) {
     switch (g_state) {
 
         case MENU_MAIN:
-            draw_item("Exit", g_index == 0);
+            draw_item("< exit", g_index == 0);
             oled_set_cursor(0,1);
             draw_item("RGB", g_index == 1);
             oled_set_cursor(0,2);
@@ -252,7 +265,7 @@ void menu_render(void) {
             break;
 
         case MENU_LEFT_ANIM:
-            draw_item("Back", g_index == 0);
+            draw_item("< back", g_index == 0);
             oled_set_cursor(0,1);
             draw_item("None", g_index == 1);
             oled_set_cursor(0,2);
@@ -260,7 +273,7 @@ void menu_render(void) {
             break;
 
         case MENU_RIGHT_ANIM:
-            draw_item("Back", g_index == 0);
+            draw_item("< back", g_index == 0);
             oled_set_cursor(0,1);
             draw_item("None", g_index == 1);
             // oled_set_cursor(0,2);
@@ -273,31 +286,28 @@ void menu_render(void) {
 }
 
 void draw_item(const char* text, bool selected) {
-    uint8_t text_length = strlen(text); 
-    
-    if (strcmp(text, "breathing") == 0) {
-        uprintf("text length is %u", text_length);
-    }
-
-    char buf[9]; 
+    uint8_t text_length = strlen(text);
+    char buf[11]; 
 
     if (selected) {
-        oled_write_P(PSTR("> "), false);
+        // oled_write_P(PSTR("> "), false);
         if (timer_elapsed32(g_text_position_timer) > 400) {
             g_text_position_timer = timer_read32();
-            if (g_text_first_idx + 8 < text_length) {
+            if (g_text_first_idx + 10 < text_length) {
                 g_text_first_idx += 1;
             }             
         }
-        strncpy(buf, text + g_text_first_idx, 8);
+        // strncpy(buf, text + g_text_first_idx, 10);
+        snprintf(buf, sizeof(buf), "%-10.10s", text + g_text_first_idx);
 
     } else {
-        oled_write_P(PSTR("  "), false);
-        strncpy(buf, text, 8);
+        // oled_write_P(PSTR("  "), false);
+        snprintf(buf, sizeof(buf), "%-10.10s", text);
+        // strncpy(buf, text, 10);
     }
 
-    buf[8] = '\0';
-    oled_write(buf, false);
+    // buf[10] = '\0';
+    oled_write(buf, selected);
 }
 
 
@@ -333,7 +343,39 @@ void menu_check_usertime(void) {
     if (menu_visible_time > 0 && key_longpress_time == 0){
         if (timer_elapsed32(menu_visible_time) > 40000) {
             //close menu
-            menu_exit();        
+            menu_exit();
+        }
+    }
+}
+
+
+void menu_handle_state_from_remote(uint8_t in_len, const void* in_data) {
+    if (in_len >= sizeof(menu_state_t)) {
+
+        menu_sync_m2s_t newstate = {0,0};
+        memcpy(&newstate, in_data, sizeof(menu_sync_m2s_t));
+
+        g_state = newstate.state;
+        g_index = newstate.index;
+    }
+}
+
+void menu_handle_mov_from_remote(uint8_t in_len, const void* in_data) {
+    if (in_len >= sizeof(encoder_key_event_t)) {
+
+        encoder_key_event_t newstate = {255};
+        memcpy(&newstate, in_data, sizeof(encoder_key_event_t));
+
+        switch (newstate) {
+            case ENC_CLK: 
+                menu_encoder_rotate(true);
+                break;
+            case ENC_CNTCLK:
+                menu_encoder_rotate(false);
+                break;
+            case ENC_PRESS:
+                menu_encoder_press();
+                break;
         }
     }
 }

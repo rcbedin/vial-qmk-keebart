@@ -7,6 +7,12 @@ typedef struct {
     uint32_t right;
 } presses_m2s_t;
 
+typedef enum {
+    ENC_CLK,
+    ENC_CNTCLK,
+    ENC_PRESS
+} encoder_key_event_t;
+
 void init_globals(void);
 void update_oled_limits(void);
 uint8_t get_oled_limit(char id);

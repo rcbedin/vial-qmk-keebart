@@ -1,5 +1,6 @@
 #include "_storage.h"
 #include "eeprom.h"
+#include "print.h"
 
 #define EEPROM_ADDR 0
 #define EEPROM_VERSION 2
@@ -23,13 +24,19 @@ static void storage_defaults(void) {
 }
 
 void storage_save(void) {
+    // uprintf("save rgb mode\n" );
+    // uprintf("menu rgb: %u \n",g_data.menu.rgb_mode );
     eeprom_update_block(&g_data, (void*)EEPROM_ADDR, sizeof(g_data));
 }
 
 void storage_init(void) {
+    // uprintf("start: storage\n" );
     eeprom_read_block(&g_data, (void*)EEPROM_ADDR, sizeof(g_data));
 
+    // uprintf("read rgb mode: %u", g_data.menu.rgb_mode );
+
     if (g_data.version != EEPROM_VERSION) {
+        // uprintf("fallback to defaults");
         storage_defaults();
         storage_save();
     }
