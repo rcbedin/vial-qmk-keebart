@@ -9,51 +9,66 @@
     CUSTOM DECLARATIONS
 */
 
-static const char *rgb_items[] = {
-    "< back",
-    "alphas_mods",
-    "gradient_up_down",
-    "gradient_left_right",
-    "breathing",
-    "band_sat",
-    "band_val",
-    "band_pinwheel_sat",
-    "band_pinwheel_val",
-    "band_spiral_sat",
-    "band_spiral_val",
-    "cycle_all",
-    "cycle_left_right",
-    "cycle_up_down",
-    "rainbow_moving_chevron",
-    "cycle_out_in",
-    "cycle_out_in_dual",
-    "cycle_pinwheel",
-    "cycle_spiral",
-    "dual_beacon",
-    "rainbow_beacon",
-    "rainbow_pinwheels",
-    "raindrops",
-    "jellybean_raindrops",
-    "hue_breathing",
-    "hue_pendulum",
-    "hue_wave",
-    "pixel_fractal",
-    "pixel_flow",
-    "pixel_rain",
-    "typing_heatmap",
-    "digital_rain",    
-    "solid_reactive_simple",
-    "solid_reactive",
-    "solid_reactive_wide",
-    "solid_reactive_multiwide",
-    "solid_reactive_cross",
-    "solid_reactive_multicross",
-    "solid_reactive_nexus",
-    "solid_reactive_multinexus",
-    "splash",
-    "multisplash",
-    "solid_splash",
-    "solid_multisplash",
+
+typedef struct {
+    const char *name;
+    uint8_t effect_id;
+} rgb_map_t;
+
+
+static const rgb_map_t rgb_items2 [] = {
+    {"< back", -1},
+    // {"solid color", RGB_MATRIX_SOLID_COLOR },
+    {"alphas mods", RGB_MATRIX_ALPHAS_MODS },
+    {"gradient up-down", RGB_MATRIX_GRADIENT_UP_DOWN },
+    {"gradient left-right", RGB_MATRIX_GRADIENT_LEFT_RIGHT },
+    {"breathing", RGB_MATRIX_BREATHING },
+    {"band sat", RGB_MATRIX_BAND_SAT },
+    {"band val", RGB_MATRIX_BAND_VAL },
+    {"band pinwheel sat", RGB_MATRIX_BAND_PINWHEEL_SAT },
+    {"band pinwheel val", RGB_MATRIX_BAND_PINWHEEL_VAL },
+    {"band spiral sat", RGB_MATRIX_BAND_SPIRAL_SAT },
+    {"band spiral val", RGB_MATRIX_BAND_SPIRAL_VAL },
+    {"cycle all", RGB_MATRIX_CYCLE_ALL },
+    {"cycle left-right", RGB_MATRIX_CYCLE_LEFT_RIGHT },
+    {"cycle up-down", RGB_MATRIX_CYCLE_UP_DOWN },
+    {"cycle out-in", RGB_MATRIX_CYCLE_OUT_IN },
+    {"cycle out-in dual", RGB_MATRIX_CYCLE_OUT_IN_DUAL },
+    {"rainbow chevron", RGB_MATRIX_RAINBOW_MOVING_CHEVRON },
+    {"cycle pinwheel", RGB_MATRIX_CYCLE_PINWHEEL },
+    {"cycle spiral", RGB_MATRIX_CYCLE_SPIRAL },
+    {"dual beacon", RGB_MATRIX_DUAL_BEACON },
+    {"rainbow beacon", RGB_MATRIX_RAINBOW_BEACON },
+    {"rainbow pinwheels", RGB_MATRIX_RAINBOW_PINWHEELS },
+    // {"flower blooming", RGB_MATRIX_FLOWER_BLOOMING },
+    {"raindrops", RGB_MATRIX_RAINDROPS },
+    {"jellybean raindrops", RGB_MATRIX_JELLYBEAN_RAINDROPS },
+    {"hue breathing", RGB_MATRIX_HUE_BREATHING },
+    {"hue pendulum", RGB_MATRIX_HUE_PENDULUM },
+    {"hue wave", RGB_MATRIX_HUE_WAVE },
+    {"pixel fractal", RGB_MATRIX_PIXEL_FRACTAL },
+    {"pixel flow", RGB_MATRIX_PIXEL_FLOW },
+    {"pixel rain", RGB_MATRIX_PIXEL_RAIN },
+    {"typing heatmap", RGB_MATRIX_TYPING_HEATMAP },
+    {"digital rain", RGB_MATRIX_DIGITAL_RAIN },
+    {"solid reactive simple", RGB_MATRIX_SOLID_REACTIVE_SIMPLE },
+    {"solid reactive", RGB_MATRIX_SOLID_REACTIVE },
+    {"solid reactive wide", RGB_MATRIX_SOLID_REACTIVE_WIDE },
+    {"solid reactive multiwide", RGB_MATRIX_SOLID_REACTIVE_MULTIWIDE },
+    {"solid reactive cross", RGB_MATRIX_SOLID_REACTIVE_CROSS },
+    {"solid reactive multicross", RGB_MATRIX_SOLID_REACTIVE_MULTICROSS },
+    {"solid reactive nexus", RGB_MATRIX_SOLID_REACTIVE_NEXUS },
+    {"solid reactive multinexus", RGB_MATRIX_SOLID_REACTIVE_MULTINEXUS },
+    {"splash", RGB_MATRIX_SPLASH },
+    {"multisplash", RGB_MATRIX_MULTISPLASH },
+    {"solid splash", RGB_MATRIX_SOLID_SPLASH },
+    {"solid multisplash", RGB_MATRIX_SOLID_MULTISPLASH }
+    // {"starlight", RGB_MATRIX_STARLIGHT },
+    // {"starlight smooth", RGB_MATRIX_STARLIGHT_SMOOTH },
+    // {"starlight dual hue", RGB_MATRIX_STARLIGHT_DUAL_HUE },
+    // {"starlight dual sat", RGB_MATRIX_STARLIGHT_DUAL_SAT },
+    // {"riverflow", RGB_MATRIX_RIVERFLOW },
+    // {"effect max", RGB_MATRIX_EFFECT_MAX }
 };
 
 static menu_state_t g_state = MENU_OFF;
@@ -72,8 +87,8 @@ void update_viewport(void) {
         by_how_much = g_index - 15;
         vp_start = by_how_much;
         vp_end = 15 + by_how_much;
-        if (vp_end > ARRAY_SIZE(rgb_items)) {
-            vp_end = ARRAY_SIZE(rgb_items);
+        if (vp_end > ARRAY_SIZE(rgb_items2)) {
+            vp_end = ARRAY_SIZE(rgb_items2);
         }
         vp_index_incr = by_how_much;
         uprintf("g_index: %u, vp_start: %u, vp_end: %u, how_much: %u, vp_index_incr: %u \n", g_index, vp_start, vp_end, by_how_much, vp_index_incr);    
@@ -157,7 +172,9 @@ void menu_encoder_rotate(bool clockwise) {
 
     switch (g_state) {
         case MENU_MAIN: max = 4; break;
-        case MENU_RGB: max = ARRAY_SIZE(rgb_items); break;
+        case MENU_RGB: max = 3; break;
+        case MENU_RGB_ANIM: max = ARRAY_SIZE(rgb_items2); break;
+        case MENU_RGB_COLOR: max = 1; break;
         case MENU_LEFT_ANIM: max = 5; break;
         case MENU_RIGHT_ANIM: max = 5; break;
         default: return;
@@ -200,15 +217,36 @@ void menu_encoder_press(void) {
             break;
 
         case MENU_RGB:
+            switch (g_index) {
+                case 0: g_state = MENU_MAIN; break;
+                case 1: g_state = MENU_RGB_ANIM; break;
+                case 2: g_state = MENU_RGB_COLOR; break;
+            }
+            g_index = 0;
+            g_index_view_from = 0;
+            break;
+
+        case MENU_RGB_ANIM:
             if (g_index == 0) {
-                g_state = MENU_MAIN;
+                g_state = MENU_RGB;
                 g_index_view_from = 0; 
             } else {
-                g_data.menu.rgb_mode = g_index - 1;
+                // set_g_rgb(rgb_items2[g_index].effect_id);
+                // g_data.rgb_mode = rgb_items2[g_index].effect_id;
                 // g_config.rgb_mode = g_index - 1;
-                rgb_matrix_mode(g_index - 1);                
+                // rgb_matrix_mode(g_index - 1);
+                rgb_matrix_mode(rgb_items2[g_index].effect_id);
+                eeconfig_update_rgb_matrix();
+                rgb_matrix_sethsv(HSV_BLUE);
                 storage_save();
             }
+            break;
+
+        case MENU_RGB_COLOR:
+            if (g_index == 0) {
+                g_state = MENU_RGB;
+                g_index_view_from = 0; 
+            } 
             break;
 
         case MENU_LEFT_ANIM:
@@ -255,13 +293,26 @@ void menu_render(void) {
             draw_item("R-Scr", g_index == 3);
             break;
 
-        case MENU_RGB:
+        case MENU_RGB: 
+            draw_item("< exit", g_index == 0);
+            oled_set_cursor(0,1);
+            draw_item("Animation", g_index == 1);
+            oled_set_cursor(0,2);
+            draw_item("Color", g_index == 2);
+            oled_set_cursor(0,3);
+
+            break;
+        case MENU_RGB_ANIM:
             // char buf[9]; 
             for (uint8_t i = vp_start, j = 0; i <= vp_end; i++, j++) {
                 oled_set_cursor(0, j);
-
-                draw_item(rgb_items[i], i == g_index);
+                draw_item(rgb_items2[i].name, i == g_index);
             }
+            break;
+
+        case MENU_RGB_COLOR:
+            draw_item("< exit", g_index == 0);
+            oled_set_cursor(0,1);
             break;
 
         case MENU_LEFT_ANIM:
@@ -379,3 +430,61 @@ void menu_handle_mov_from_remote(uint8_t in_len, const void* in_data) {
         }
     }
 }
+
+
+
+
+// static const char *rgb_items[] = {
+//     "< back",
+//     "solid color",
+//     "alphas mods",
+//     "gradient up-down",
+//     "gradient left-right",
+//     "breathing",
+//     "band sat",
+//     "band val",
+//     "band pinwheel sat",
+//     "band pinwheel val",
+//     "band spiral sat",
+//     "band spiral val",
+//     "cycle all",
+//     "cycle left-right",
+//     "cycle up-down",
+//     "cycle out-in",
+//     "cycle out-in dual",
+//     "rainbow chevron",
+//     "cycle pinwheel",
+//     "cycle spiral",
+//     "dual beacon",
+//     "rainbow beacon",
+//     "rainbow pinwheels",
+//     "flower blooming",
+//     "raindrops",
+//     "jellybean raindrops",
+//     "hue breathing",
+//     "hue pendulum",
+//     "hue wave",
+//     "pixel fractal",
+//     "pixel flow",
+//     "pixel rain",
+//     "typing heatmap",
+//     "digital rain",    
+//     "solid reactive simple",
+//     "solid reactive",
+//     "solid reactive wide",
+//     "solid reactive multiwide",
+//     "solid reactive cross",
+//     "solid reactive multicross",
+//     "solid reactive nexus",
+//     "solid reactive multinexus",
+//     "splash",
+//     "multisplash",
+//     "solid splash",
+//     "solid multisplash",
+//     "starlight",
+//     "starlight smooth",
+//     "starlight dual hue",
+//     "starlight dual sat",
+//     "starlight riverflow",
+//     "effect max"
+// };

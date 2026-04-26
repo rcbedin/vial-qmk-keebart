@@ -6,6 +6,8 @@ typedef enum {
     MENU_OFF,
     MENU_MAIN,
     MENU_RGB,
+    MENU_RGB_ANIM,
+    MENU_RGB_COLOR,
     MENU_LEFT_ANIM,
     MENU_RIGHT_ANIM
 } menu_state_t;

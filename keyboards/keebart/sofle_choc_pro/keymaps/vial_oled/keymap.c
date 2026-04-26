@@ -31,7 +31,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+------|  F13  |    | F14   |------+------+------+------+------+------|
  * | LCTR |   Z  |   X  |   C  |   V  |   B  |-------|    |-------|   N  |   M  |   ,  |   .  |   /  | `    |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *            | mins | win  |LAlt  |LOWER | /Space  /       \Enter \  |RAISE | =+   | [    |     ] |           
+ *            | mins | win  |LAlt  |LOWER | /Space  /       \Enter \  |RAISE | =+   | [    |     ] |
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
  */
@@ -56,12 +56,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *            |      |      | LOWER|      | /       /       \      \  |      |      |      |      |
  *            |      |      |      |      |/       /         \      \ |      |      |      |      |
  *            `----------------------------------'           '------''---------------------------'
- */   
+ */
 [_LOWER] = LAYOUT_split_4x6_5(
   KC_ESC,   KC_F1,   KC_F2,   KC_F3,   KC_F4,         KC_F5,                           KC_F6,         KC_F7,    KC_F8,       KC_F9,       KC_F10,   KC_BSPC,
   KC_TAB,   KC_F11,  KC_F12,  XXXXXXX, XXXXXXX,       XXXXXXX,                         XXXXXXX,       XXXXXXX,  KC_UP,       XXXXXXX,     XXXXXXX,  KC_DELETE,
   KC_LSFT,  XXXXXXX, XXXXXXX, KC_PGUP, XXXXXXX,       KC_HOME,                         C(S(KC_UP)),   KC_LEFT,  KC_DOWN,     KC_RGHT,     XXXXXXX,  XXXXXXX,
-  KC_LCTL,  XXXXXXX, XXXXXXX, KC_PGDN, XXXXXXX,       KC_END,  _______,      _______,  C(S(KC_DOWN)), XXXXXXX,  C(KC_LEFT),  C(KC_RIGHT), XXXXXXX,  XXXXXXX, 
+  KC_LCTL,  XXXXXXX, XXXXXXX, KC_PGDN, XXXXXXX,       KC_END,  _______,      _______,  C(S(KC_DOWN)), XXXXXXX,  C(KC_LEFT),  C(KC_RIGHT), XXXXXXX,  XXXXXXX,
                 XXXXXXX,  KC_LWIN, _______, KC_LALT,  KC_SPC,                          KC_ENT, KC_EQL, _______, KC_LBRC, KC_RBRC
 ),
 /* RAISE
@@ -113,7 +113,7 @@ typedef struct {
     eeprom_data_t data;
 } config_sync_t;
 
-typedef struct {    
+typedef struct {
     uint8_t left;
     uint8_t right;
 } pressed_keys_m2s_t;
@@ -167,11 +167,11 @@ uint16_t change_left_encoder_layer(void) {
             case _EC_L_MEDIA:
                 return KC_MPLY;
                 break;
-            
+
             default:
                 return KC_MUTE;
                 break;
-        }   
+        }
     }
 
     return KC_TRANSPARENT;
@@ -190,7 +190,7 @@ static void user_sync_oled_state_slave(uint8_t in_len, const void* in_data,
 static void user_sync_lastkey_slave(uint8_t in_len, const void* in_data,
                                     uint8_t out_len, void* out_data) {
     if (in_len >= sizeof(lastkey_m2s_t)) {
-        const lastkey_m2s_t* p = (const lastkey_m2s_t*)in_data;      
+        const lastkey_m2s_t* p = (const lastkey_m2s_t*)in_data;
         g_last_keycode = p->keycode;
     }
 }
@@ -207,7 +207,7 @@ static void user_sync_presses_slave(uint8_t in_len, const void* in_data,
 
 static void user_sync_menu_state(uint8_t in_len, const void* in_data,
                                     uint8_t out_len, void* out_data) {
-    menu_handle_state_from_remote(in_len, in_data);    
+    menu_handle_state_from_remote(in_len, in_data);
 }
 
 static void user_sync_menu_mov_state(uint8_t in_len, const void* in_data,
@@ -232,7 +232,7 @@ void matrix_init_user() {
 }
 
 void keyboard_post_init_user(void) {
-    
+
 
     pin_t dsp_pen_pin = get_charge_pump_enable_pin();
     gpio_set_pin_output(dsp_pen_pin);
@@ -246,18 +246,39 @@ void keyboard_post_init_user(void) {
     transaction_register_rpc(USER_SYNC_MENU_MOV, user_sync_menu_mov_state);
     // transaction_register_rpc(USER_SYNC_CONFIG, user_sync_config_slave);
 
+    // wait_ms(200);
     if (!is_keyboard_master()) {
         wait_ms(90); // wait for master to be ready
     }
-    
+
+    uprintf("post init\n");
+
     init_globals();
-    // storage_init();
-    anim_bongocat_init(); 
-    // uprintf("finished post init\n" );    
+    if (is_keyboard_master()) {
+        storage_init();
+        rgb_matrix_mode(g_data.rgb_mode);
+    }
+    anim_bongocat_init();
+    // uprintf("finished post init\n" );
+}
+
+void eeconfig_init_user(void) {  // EEPROM is getting reset!
+    storage_defaults();
+    storage_save();
+//   user_config.raw = 0;
+//   user_config.rgb_layer_change = true; // We want this enabled by default
+//   eeconfig_update_user(user_config.raw); // Write default value to EEPROM now
+
+//   // use the non noeeprom versions, to write these values to EEPROM too
+//   rgblight_enable(); // Enable RGB by default
+//   rgblight_sethsv(HSV_CYAN);  // Set it to CYAN by default
+//   rgblight_mode(1); // set to solid by default
 }
 
 void rgb_matrix_post_init_user(void) {
-    // rgb_matrix_mode( g_data.menu.rgb_mode );    
+    // if (is_keyboard_master()) {
+    //     rgb_matrix_mode( g_data.menu.rgb_mode );
+    // }
 }
 
 void housekeeping_task_user(void) {
@@ -274,12 +295,12 @@ void housekeeping_task_user(void) {
         }
 
         //Left ENCODER_RESET_TIMEOUT_USER
-        uint32_t encsync = timer_elapsed32(l_enc_sync_time);    
+        uint32_t encsync = timer_elapsed32(l_enc_sync_time);
         if (encsync > ENCODER_RESET_TIMEOUT_USER) {
             l_enc_layer = _EC_L_VOLUME;
             l_enc_sync_time = curr_timer;
         }
-    }  
+    }
 }
 
 bool encoder_update_user(uint8_t index, bool clockwise) {
@@ -295,17 +316,17 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
                     tap_code(KC_VOLD);
                 }
                 break;
-            case _EC_L_MEDIA: 
+            case _EC_L_MEDIA:
                 if (clockwise) {
                     tap_code(KC_MNXT);
-                } else { 
+                } else {
                     tap_code(KC_MPRV);
                 }
                 break;
-             case _EC_L_ZOOM: 
+             case _EC_L_ZOOM:
                 if (clockwise) {
                     tap_code16(C(KC_PPLS));
-                } else { 
+                } else {
                     tap_code16(C(KC_PMNS));
                 }
                 break;
@@ -313,11 +334,11 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
                 break;
         }
     } else {
-        if (menu_is_active()) {            
+        if (menu_is_active()) {
             g_user_ontime = timer_read32();
             menu_encoder_rotate(clockwise);
             return false;
-        } 
+        }
 
         if (clockwise) {
             tap_code(KC_RIGHT);
@@ -334,7 +355,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         if (keycode == KC_F13 && layer_state_is(_LOWER)) {
             reset_keyboard();
             return false;
-        } 
+        }
         if (keycode == KC_F14 && layer_state_is(_RAISE)) {
             reset_keyboard();
             return false;
@@ -355,15 +376,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         /*--------------------------------------
                          ENCODER
         ----------------------------------------*/
-     
+
         switch (keycode) {
-            case KC_F13:              
+            case KC_F13:
                 l_enc_pressed = true;
-                l_enc_timer = timer_read32();                
+                l_enc_timer = timer_read32();
                 break;
             default:
                 break;
-        }       
+        }
         /*--------------------------------------*/
         g_last_keycode = keycode;
         presses_m2s_t total_presses;
@@ -389,9 +410,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
         /*--------------------------------------
                          ENCODER
-        ----------------------------------------*/      
+        ----------------------------------------*/
         switch (keycode) {
-            case KC_F13: //Left encoder   
+            case KC_F13: //Left encoder
                 if (!l_enc_pressed) {
                     break;
                 } else {
@@ -401,12 +422,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                         tap_code(key_to_tap);
                         return false;
                     }
-                }                                
-                break;            
+                }
+                break;
             default:
                 break;
-        }       
-        /*--------------------------------------*/        
+        }
+        /*--------------------------------------*/
     }
     return true;
 }
@@ -447,7 +468,7 @@ bool oled_post_init(void) {
 
 bool oled_task_user(void) {
     // perform custom initialisation once
-    oled_post_init();    
+    oled_post_init();
 
     if (g_splash_active) {
         if (timer_elapsed32(g_splash_start_ms) > SPLASH_DURATION_MS) {
@@ -489,9 +510,9 @@ bool oled_task_user(void) {
     }
 
     if (is_keyboard_left()) {
-        widgets_render(_SCR_LEFT);        
-    } else {        
-        widgets_render(_SCR_RIGHT);       
+        widgets_render(_SCR_LEFT);
+    } else {
+        widgets_render(_SCR_RIGHT);
     }
 
     return false;
