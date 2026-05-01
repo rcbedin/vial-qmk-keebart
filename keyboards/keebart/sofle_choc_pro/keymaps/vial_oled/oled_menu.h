@@ -8,6 +8,7 @@ typedef enum {
     MENU_RGB,
     MENU_RGB_ANIM,
     MENU_RGB_COLOR,
+    MENU_RGB_COLOR_DIAL,
     MENU_LEFT_ANIM,
     MENU_RIGHT_ANIM
 } menu_state_t;
@@ -21,9 +22,6 @@ typedef struct {
 void menu_init(void);
 void menu_render(void);
 
-void menu_enter(void);
-void menu_exit(void);
-
 void menu_encoder_rotate(bool clockwise);
 void menu_encoder_press(void);
 
@@ -32,8 +30,6 @@ bool menu_is_active(void);
 bool menu_check_keypress(uint16_t keycode, bool pressed);
 void menu_check_usertime(void);
 
-//REMOTE EVENTS TO THE CLIENT
+//REMOTE EVENTS TO SYNC BETWEEN SIDES
 void menu_handle_state_from_remote(uint8_t in_len, const void* in_data);
 void menu_handle_mov_from_remote(uint8_t in_len, const void* in_data);
-
-void draw_item(const char* text, bool selected);

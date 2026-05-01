@@ -256,7 +256,7 @@ void keyboard_post_init_user(void) {
     init_globals();
     if (is_keyboard_master()) {
         storage_init();
-        rgb_matrix_mode(g_data.rgb_mode);
+        // rgb_matrix_mode(g_data.rgb_mode);
     }
     anim_bongocat_init();
     // uprintf("finished post init\n" );
