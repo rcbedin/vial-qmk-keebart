@@ -61,7 +61,7 @@ static const rgb_map_t rgb_items2 [] = {
     {"splash", RGB_MATRIX_SPLASH },
     {"multisplash", RGB_MATRIX_MULTISPLASH },
     {"solid splash", RGB_MATRIX_SOLID_SPLASH },
-    {"solid multisplash", RGB_MATRIX_SOLID_MULTISPLASH }
+    {"solid multisplash", RGB_MATRIX_CUSTOM_MULTISPLASH_BG } //RGB_MATRIX_SOLID_MULTISPLASH }
     // {"starlight", RGB_MATRIX_STARLIGHT },
     // {"starlight smooth", RGB_MATRIX_STARLIGHT_SMOOTH },
     // {"starlight dual hue", RGB_MATRIX_STARLIGHT_DUAL_HUE },
@@ -347,7 +347,6 @@ void menu_encoder_press(void) {
                     break;
             }
             g_index = 0;
-            g_index_view_from = 0; 
             break;
 
         case MENU_RGB:
@@ -358,28 +357,24 @@ void menu_encoder_press(void) {
                 case 3: g_state = MENU_RGB_SPEED_DIAL; break;                
             }
             g_index = 0;
-            g_index_view_from = 0;
             break;
 
         case MENU_RGB_ANIM:
             if (g_index == 0) {
                 //revert to last animation if i selected back
                 g_state = MENU_RGB;
-                g_index_view_from = 0; 
                 rgb_matrix_mode_noeeprom(last_anim);
             } else {                
                 rgb_matrix_config.mode = rgb_items2[g_index].effect_id;
                 last_anim = rgb_matrix_config.mode;
                 g_index = 0;
                 g_state = MENU_RGB;
-                g_index_view_from = 0;
             }
             break;
 
         case MENU_RGB_COLOR:
             if (g_index == 0) {
                 g_state = MENU_RGB;
-                g_index_view_from = 0; 
             } else {
                 g_state = MENU_RGB_COLOR_DIAL;
                 rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
@@ -390,7 +385,6 @@ void menu_encoder_press(void) {
         case MENU_RGB_SPEED_DIAL: 
             g_index = 0;
             g_state = MENU_RGB;
-            g_index_view_from = 0;            
             break;
 
         case MENU_RGB_COLOR_DIAL: 
@@ -398,26 +392,21 @@ void menu_encoder_press(void) {
             rgb_matrix_mode_noeeprom(last_anim);
             g_state = MENU_RGB_COLOR;
             g_index = 0;
-            g_index_view_from = 0;
             break;
 
         case MENU_LEFT_ANIM:
             if (g_index == 0) {
                 g_state = MENU_MAIN;                
-                g_index_view_from = 0;  
             } else {
                 g_config.left_anim = g_index - 1;
-                // storage_save();
             }
             break;
 
         case MENU_RIGHT_ANIM:
             if (g_index == 0) {
                 g_state = MENU_MAIN;
-                g_index_view_from = 0;  
             } else {
                 g_config.right_anim = g_index - 1;
-                // storage_save();
             }
             break;
 
@@ -425,17 +414,17 @@ void menu_encoder_press(void) {
             if (g_index == 0) {
                 //go back to where i was;
                 g_state = dialog_data.negative_goto;
-                g_index_view_from = 0; 
             } else if (g_index == 1) {
+                //call function pointer and return to previous menu
                 dialog_data.action();
                 g_state = dialog_data.positive_goto;
-                g_index = 0;                
-                //call finishing function
+                g_index = 0;
             }   
             break;
         default:
             break;
     }
+    g_index_view_from = 0;
 
     send_encoder_sync(ENC_PRESS);
 }
@@ -467,7 +456,6 @@ void menu_render(void) {
             draw_line("Speed", g_index == 3, line);
             break;
         case MENU_RGB_ANIM:
-            // char buf[9]; 
             for (uint8_t i = vp_start, j = 0; i <= vp_end; i++, j++) {                
                 draw_line(rgb_items2[i].name, i == g_index, j);
             }
