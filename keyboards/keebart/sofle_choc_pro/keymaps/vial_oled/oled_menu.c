@@ -17,7 +17,7 @@ typedef struct {
 
 static const rgb_map_t rgb_items2 [] = {
     {"<- Back", -1},
-    // {"solid color", RGB_MATRIX_SOLID_COLOR },
+    {"solid color", RGB_MATRIX_SOLID_COLOR },
     {"alphas mods", RGB_MATRIX_ALPHAS_MODS },
     {"gradient up-down", RGB_MATRIX_GRADIENT_UP_DOWN },
     {"gradient left-right", RGB_MATRIX_GRADIENT_LEFT_RIGHT },
@@ -75,12 +75,19 @@ static uint8_t g_index = 0;
 static uint32_t g_text_position_timer = 0;
 static uint8_t g_text_first_idx = 0;
 
-int16_t hsv[3];
-
 uint8_t vp_start = 0;
 uint8_t vp_end = 15; //TODO: change VP_END in favor of global maxchars
 uint8_t vp_index_incr = 0;
+uint8_t last_anim = 0;
 
+typedef struct {
+    char* title;
+    void (*action)(void);
+    uint8_t negative_goto;
+    uint8_t positive_goto;
+} menu_dialog_item_t;
+
+menu_dialog_item_t dialog_data; 
 typedef union {
     uint32_t raw;
     struct {
@@ -144,7 +151,10 @@ void menu_enter(void) {
     g_state = MENU_MAIN;
     g_index = 0;
 
-    send_state_sync();  
+    eeconfig_read_rgb_matrix(&rgb_matrix_config);
+    last_anim = rgb_matrix_config.mode;
+
+    send_state_sync();
 }
 
 void menu_exit(void) {
@@ -156,30 +166,93 @@ void menu_exit(void) {
     }
 }
 
-void save_eeprom(void) {    
+void save_eeprom(void) {
+    rgb_matrix_sethsv(
+        rgb_matrix_config.hsv.h,
+        rgb_matrix_config.hsv.s,
+        rgb_matrix_config.hsv.v
+    );
+    rgb_matrix_mode(
+        rgb_matrix_config.mode
+    );
+    rgb_matrix_set_speed(rgb_matrix_config.speed);
     eeconfig_update_kb(rgb_matrix_config.raw);
 }
 
-void draw_item(const char* text, bool selected) {
+
+uint8_t draw_item(const char* text, bool selected, uint8_t line, bool multiline) {
+    uint8_t max_width = get_oled_limit('c');
     uint8_t text_length = strlen(text);
-    char buf[11]; 
+    char buf[11];
+    oled_set_cursor(0, line++);
 
     if (selected) {
         if (timer_elapsed32(g_text_position_timer) > 400) {
             g_text_position_timer = timer_read32();
             if (g_text_first_idx + 10 < text_length) {
                 g_text_first_idx += 1;
-            }             
+            }            
         }
-        snprintf(buf, sizeof(buf), "%-10.10s", text + g_text_first_idx);
-
-    } else {
-        snprintf(buf, sizeof(buf), "%-10.10s", text);
+        text += g_text_first_idx;
     }
 
+    snprintf(buf, sizeof(buf), "%-*.*s", max_width, max_width, text);
     oled_write(buf, selected);
+
+    if (multiline && !selected && text_length > max_width) {
+        text += max_width;
+
+        while (*text) {
+            oled_set_cursor(0, line++);
+
+            snprintf(buf, sizeof(buf), "%-*.*s", max_width, max_width, text);            
+            oled_write(buf, selected); 
+            text += max_width;
+        }
+    }
+
+    return line;
 }
 
+uint8_t draw_line(const char* text, bool selected, uint8_t line) {
+    return draw_item(text, selected, line, false);
+}
+
+void rotate_hsv(bool clockwise) {
+    uint8_t max = 255;
+    switch(g_index) {
+        case 1:          
+            if (clockwise) {
+                if (rgb_matrix_config.hsv.h < max) {
+                    rgb_matrix_config.hsv.h += 1;
+                }
+            } else if (rgb_matrix_config.hsv.h > 0) {
+                rgb_matrix_config.hsv.h -= 1;
+            }
+            break;
+        case 2: 
+            if (clockwise) {
+                if (rgb_matrix_config.hsv.s < max) {
+                    rgb_matrix_config.hsv.s += 1;
+                }
+            } else if (rgb_matrix_config.hsv.s > 0) {
+                rgb_matrix_config.hsv.s -= 1;
+            }
+            break;
+        case 3: 
+            max = 101;
+            if (clockwise) {
+                if (rgb_matrix_config.hsv.v < max) {
+                    rgb_matrix_config.hsv.v += 1;
+                }
+            } else if (rgb_matrix_config.hsv.v > 0) {
+                rgb_matrix_config.hsv.v -= 1;
+            }
+            break;
+    }
+    rgb_matrix_sethsv_noeeprom(rgb_matrix_config.hsv.h, rgb_matrix_config.hsv.s, rgb_matrix_config.hsv.v);
+    send_encoder_sync(clockwise ? ENC_CLK : ENC_CNTCLK);
+}
 
 /*
     END CUSTOM DECLARATIONS
@@ -187,12 +260,7 @@ void draw_item(const char* text, bool selected) {
 
 void menu_init(void) {    
     g_state = MENU_OFF;
-    g_index = 0;
-    eeconfig_read_rgb_matrix(&rgb_matrix_config);
-
-    hsv[0] = rgb_matrix_config.hsv.h;
-    hsv[1] = rgb_matrix_config.hsv.s;
-    hsv[2] = rgb_matrix_config.hsv.v;
+    g_index = 0;    
 }
 
 bool menu_is_active(void) {
@@ -205,44 +273,51 @@ void menu_encoder_rotate(bool clockwise) {
 
     switch (g_state) {
         case MENU_MAIN: max = 5; break;
-        case MENU_RGB: max = 3; break;
+        case MENU_RGB: max = 4; break;
         case MENU_RGB_ANIM: max = ARRAY_SIZE(rgb_items2); break;
         case MENU_RGB_COLOR: max = 4; break;
-        case MENU_RGB_COLOR_DIAL: max = 1; break;
-        case MENU_LEFT_ANIM: max = 5; break;
-        case MENU_RIGHT_ANIM: max = 5; break;
+        case MENU_RGB_COLOR_DIAL: 
+            rotate_hsv(clockwise);                 
+            return;
+        case MENU_RGB_SPEED_DIAL:
+            max = 255; 
+            if (clockwise) {
+                if (rgb_matrix_config.speed < max) {
+                    rgb_matrix_config.speed += 1;
+                }
+            } else if (rgb_matrix_config.speed > 0) {
+                rgb_matrix_config.speed -= 1;
+            }
+            rgb_matrix_set_speed_noeeprom(rgb_matrix_config.speed);
+            send_encoder_sync(clockwise ? ENC_CLK : ENC_CNTCLK);
+            return;
+        case MENU_DIALOG: max = 2; break;
+        case MENU_LEFT_ANIM: max = 3; break;
+        case MENU_RIGHT_ANIM: max = 2; break;
         default: return;
     }    
 
-    if (clockwise) {
-        if (g_state == MENU_RGB_COLOR_DIAL) {
-            if (hsv[g_index - 1] < 255) {
-                hsv[g_index - 1] += 1;
-            }
+    if (clockwise) {       
+        if ((g_index + 1) >= max) {
+            g_index = 0;
         } else {
-            if ((g_index + 1) >= max) {
-                g_index = 0;
-            } else {
-                g_index++;
-            }
+            g_index++;
         }
     } else {
-        if (g_state == MENU_RGB_COLOR_DIAL) {
-            //TODO: change color value
-            if (hsv[g_index - 1] > 0) {
-                hsv[g_index - 1] -= 1;
-            }
+        if (g_index == 0) { 
+            g_index = max -1;
         } else {
-            if (g_index == 0) { 
-                g_index = max -1;
-            } else {
-                g_index = (g_index - 1);
-            }
+            g_index = (g_index - 1);
         }
     }
 
     if (g_state == MENU_RGB_ANIM) {
-        rgb_matrix_mode(rgb_items2[g_index].effect_id);
+        if (g_index == 0) {
+            rgb_matrix_config.mode = last_anim;
+        } else {
+            rgb_matrix_config.mode = rgb_items2[g_index].effect_id;
+        }
+        rgb_matrix_mode_noeeprom(rgb_matrix_config.mode);        
     }
 
     update_viewport();
@@ -261,7 +336,15 @@ void menu_encoder_press(void) {
                 case 1: g_state = MENU_RGB; break;
                 case 2: g_state = MENU_LEFT_ANIM; break;
                 case 3: g_state = MENU_RIGHT_ANIM; break;
-                case 4: save_eeprom(); break;
+                case 4: 
+                    dialog_data = (menu_dialog_item_t) {
+                        "Save cfg. to EEPROM?\0",
+                        save_eeprom,
+                        MENU_MAIN, 
+                        MENU_MAIN
+                    };
+                    g_state = MENU_DIALOG;                
+                    break;
             }
             g_index = 0;
             g_index_view_from = 0; 
@@ -272,6 +355,7 @@ void menu_encoder_press(void) {
                 case 0: g_state = MENU_MAIN; break;
                 case 1: g_state = MENU_RGB_ANIM; break;
                 case 2: g_state = MENU_RGB_COLOR; break;
+                case 3: g_state = MENU_RGB_SPEED_DIAL; break;                
             }
             g_index = 0;
             g_index_view_from = 0;
@@ -279,10 +363,16 @@ void menu_encoder_press(void) {
 
         case MENU_RGB_ANIM:
             if (g_index == 0) {
+                //revert to last animation if i selected back
                 g_state = MENU_RGB;
                 g_index_view_from = 0; 
-            } else {
-                rgb_matrix_mode_noeeprom(rgb_items2[g_index].effect_id);              
+                rgb_matrix_mode_noeeprom(last_anim);
+            } else {                
+                rgb_matrix_config.mode = rgb_items2[g_index].effect_id;
+                last_anim = rgb_matrix_config.mode;
+                g_index = 0;
+                g_state = MENU_RGB;
+                g_index_view_from = 0;
             }
             break;
 
@@ -292,13 +382,20 @@ void menu_encoder_press(void) {
                 g_index_view_from = 0; 
             } else {
                 g_state = MENU_RGB_COLOR_DIAL;
+                rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
             }
             //DO NOT reset the g_index because 
             //i want to know what values im changing in the color dial
             break;
+        case MENU_RGB_SPEED_DIAL: 
+            g_index = 0;
+            g_state = MENU_RGB;
+            g_index_view_from = 0;            
+            break;
 
         case MENU_RGB_COLOR_DIAL: 
-            //go back without asking
+            //reset the animation and go back
+            rgb_matrix_mode_noeeprom(last_anim);
             g_state = MENU_RGB_COLOR;
             g_index = 0;
             g_index_view_from = 0;
@@ -310,7 +407,7 @@ void menu_encoder_press(void) {
                 g_index_view_from = 0;  
             } else {
                 g_config.left_anim = g_index - 1;
-                storage_save();
+                // storage_save();
             }
             break;
 
@@ -320,10 +417,22 @@ void menu_encoder_press(void) {
                 g_index_view_from = 0;  
             } else {
                 g_config.right_anim = g_index - 1;
-                storage_save();
+                // storage_save();
             }
             break;
 
+        case MENU_DIALOG: 
+            if (g_index == 0) {
+                //go back to where i was;
+                g_state = dialog_data.negative_goto;
+                g_index_view_from = 0; 
+            } else if (g_index == 1) {
+                dialog_data.action();
+                g_state = dialog_data.positive_goto;
+                g_index = 0;                
+                //call finishing function
+            }   
+            break;
         default:
             break;
     }
@@ -331,107 +440,83 @@ void menu_encoder_press(void) {
     send_encoder_sync(ENC_PRESS);
 }
 
-
 void menu_render(void) {
-    uint8_t max_width = get_oled_limit('c');
-    char buf[max_width + 1];
+    uint8_t w = get_oled_limit('c');
 
-    int w = max_width;
+    char buf[w + 1];
+    uint8_t line = 0;
+
     if (w > (int)sizeof(buf) - 1) {
         w = sizeof(buf) - 1;
     }
-
     
     oled_clear();
-
     switch (g_state) {
-
         case MENU_MAIN:
-            draw_item("Exit", g_index == 0);
-            oled_set_cursor(0,1);
-            draw_item("RGB", g_index == 1);
-            oled_set_cursor(0,2);
-            draw_item("L-Scr", g_index == 2);
-            oled_set_cursor(0,3);
-            draw_item("R-Scr", g_index == 3);
-            oled_set_cursor(0,15);
-            draw_item("Save EEPROM", g_index == 4);
+            line = draw_line("<- Exit", g_index == 0, line);
+            line = draw_line("RGB", g_index == 1, line);
+            line = draw_line("L-Scr", g_index == 2, line);
+            line = draw_line("R-Scr", g_index == 3, line);
+            draw_line("* Save", g_index == 4, 15);
             break;
 
         case MENU_RGB: 
-            draw_item("<- Back", g_index == 0);
-            oled_set_cursor(0,1);
-            draw_item("Animation", g_index == 1);
-            oled_set_cursor(0,2);
-            draw_item("Color", g_index == 2);
-            oled_set_cursor(0,3);
-
+            line = draw_line("<- Back", g_index == 0, line);
+            line = draw_line("Animation", g_index == 1, line);
+            line = draw_line("Color", g_index == 2, line);
+            draw_line("Speed", g_index == 3, line);
             break;
         case MENU_RGB_ANIM:
             // char buf[9]; 
-            for (uint8_t i = vp_start, j = 0; i <= vp_end; i++, j++) {
-                oled_set_cursor(0, j);
-                draw_item(rgb_items2[i].name, i == g_index);
+            for (uint8_t i = vp_start, j = 0; i <= vp_end; i++, j++) {                
+                draw_line(rgb_items2[i].name, i == g_index, j);
             }
             break;
 
         case MENU_RGB_COLOR:
-            draw_item("<- Back", g_index == 0);
-            oled_set_cursor(0,1);
-            draw_item("Hue", g_index == 1);
-
-            oled_set_cursor(0,2);
-            draw_item("Saturation", g_index == 2);
-            
-            oled_set_cursor(0,3);
-            draw_item("Value", g_index == 3);
-
+            line = draw_line("<- Back", g_index == 0, line);
+            line = draw_line("Hue", g_index == 1, line);
+            line = draw_line("Sat.", g_index == 2, line);
+            draw_line("Bright.", g_index == 3, line);
             break;
-            
+        case MENU_RGB_SPEED_DIAL: 
+            line = draw_line("Anim. spd:", false, line);
+            snprintf(buf, sizeof(buf), "%*u",  w, rgb_matrix_config.speed);
+            draw_line(buf, false, line);
+            break;
         case MENU_RGB_COLOR_DIAL:
             if (g_index == 1) {
-                //HUE 
-                draw_item("Hue:", false);
-                oled_set_cursor(0,1);                    
-                snprintf(buf, sizeof(buf), "%*u",  w, hsv[g_index - 1]);
-                draw_item(buf, false);
-                oled_set_cursor(0,3);
-                draw_item("square", false);
+                line = draw_line("Hue:", false, line);
+                snprintf(buf, sizeof(buf), "%*u",  w, rgb_matrix_config.hsv.h);
             } else if (g_index == 2) {
-                //Saturation
-                draw_item("Sat.:", false);
-                oled_set_cursor(0,1);
-                snprintf(buf, sizeof(buf), "%*u",  w, hsv[g_index - 1]); //rgb_matrix_config.hsv.s);
-                draw_item(buf, false);
-                oled_set_cursor(0,3);
-                draw_item("square", false);
+                line = draw_line("Sat.:", false, line);
+                snprintf(buf, sizeof(buf), "%*u",  w, rgb_matrix_config.hsv.s);
             } else if (g_index == 3) {
-                //Value | brightness
-                draw_item("Value:", false);
-                oled_set_cursor(0,1);
-                snprintf(buf, sizeof(buf), "%*u",  w, hsv[g_index - 1] );// rgb_matrix_config.hsv.v);
-                draw_item(buf, false);
-                oled_set_cursor(0,3);
-                draw_item("square", false); 
+                line = draw_line("Bright.:", false, line);
+                snprintf(buf, sizeof(buf), "%*u",  w, rgb_matrix_config.hsv.v);
             } else {
-                draw_item("Out of scope", false);
+                line = draw_line("Out of scope", false, line);
+                return;
             }
+
+            draw_line(buf, false, line);
             break;
 
         case MENU_LEFT_ANIM:
-            draw_item("<- Back", g_index == 0);
-            oled_set_cursor(0,1);
-            draw_item("None", g_index == 1);
-            oled_set_cursor(0,2);
-            draw_item("BongoCat", g_index == 2);
+            line = draw_line("<- Back", g_index == 0, line);
+            line = draw_line("None", g_index == 1, line);
+            draw_line("BongoCat", g_index == 2, line);
             break;
 
         case MENU_RIGHT_ANIM:
-            draw_item("<- Back", g_index == 0);
-            oled_set_cursor(0,1);
-            draw_item("None", g_index == 1);
-            // oled_set_cursor(0,2);
-            // draw_item("Anim2", g_index == 2);
+            line = draw_line("<- Back", g_index == 0, line);
+            draw_line("None", g_index == 1, line);
+            break;
+        
+        case MENU_DIALOG: 
+            draw_item(dialog_data.title, false, line, true);
+            draw_line("No", g_index == 0, 6);
+            draw_line("Yes", g_index == 1, 7);
             break;
 
         default:

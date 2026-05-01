@@ -233,6 +233,9 @@ void matrix_init_user() {
 
 void keyboard_post_init_user(void) {
 
+    if (!is_keyboard_left()) {
+        menu_init();
+    }
 
     pin_t dsp_pen_pin = get_charge_pump_enable_pin();
     gpio_set_pin_output(dsp_pen_pin);

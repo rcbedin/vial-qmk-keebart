@@ -9,8 +9,10 @@ typedef enum {
     MENU_RGB_ANIM,
     MENU_RGB_COLOR,
     MENU_RGB_COLOR_DIAL,
+    MENU_RGB_SPEED_DIAL,
     MENU_LEFT_ANIM,
-    MENU_RIGHT_ANIM
+    MENU_RIGHT_ANIM,
+    MENU_DIALOG
 } menu_state_t;
 
 
