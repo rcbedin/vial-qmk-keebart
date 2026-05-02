@@ -17,3 +17,4 @@ SRC += _globals.c
 SRC += animations/bongo_cat.c
 CONSOLE_ENABLE = no
 RGB_MATRIX_CUSTOM_USER = yes
+RGB_MATRIX_CUSTOM_EFFECT_IMPLS = yes

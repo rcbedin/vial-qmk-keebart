@@ -6,14 +6,40 @@
 #include "transactions.h"
 #include "_globals.h"
 #include "rgb_matrix.h"
-
+#include "palettefx.h"
 /*
     CUSTOM DECLARATIONS
 */
+
+typedef struct {
+    const char *name;
+    uint8_t palette_id;
+} palette_map_t;
+
 typedef struct {
     const char *name;
     uint8_t effect_id;
 } rgb_map_t;
+
+static const palette_map_t palette_items [] = {
+    {"<- Back", -1},
+    {"palettefx afterburn", PALETTEFX_AFTERBURN},
+    {"palettefx amber", PALETTEFX_AMBER},
+    {"palettefx badwolf", PALETTEFX_BADWOLF},
+    {"palettefx carnival", PALETTEFX_CARNIVAL},
+    {"palettefx classic", PALETTEFX_CLASSIC},
+    {"palettefx dracula", PALETTEFX_DRACULA},
+    {"palettefx groovy", PALETTEFX_GROOVY},
+    {"palettefx notpink", PALETTEFX_NOTPINK},
+    {"palettefx phosphor", PALETTEFX_PHOSPHOR},
+    {"palettefx polarized", PALETTEFX_POLARIZED},
+    {"palettefx rosegold", PALETTEFX_ROSEGOLD},
+    {"palettefx sport", PALETTEFX_SPORT},
+    {"palettefx synthwave", PALETTEFX_SYNTHWAVE},
+    {"palettefx thermal", PALETTEFX_THERMAL},
+    {"palettefx viridis", PALETTEFX_VIRIDIS},
+    {"palettefx watermelon", PALETTEFX_WATERMELON},
+};
 
 static const rgb_map_t rgb_items2 [] = {
     {"<- Back", -1},
@@ -61,7 +87,13 @@ static const rgb_map_t rgb_items2 [] = {
     {"splash", RGB_MATRIX_SPLASH },
     {"multisplash", RGB_MATRIX_MULTISPLASH },
     {"solid splash", RGB_MATRIX_SOLID_SPLASH },
-    {"solid multisplash", RGB_MATRIX_CUSTOM_MULTISPLASH_BG } //RGB_MATRIX_SOLID_MULTISPLASH }
+    {"solid multisplash", RGB_MATRIX_SOLID_MULTISPLASH }, //RGB_MATRIX_CUSTOM_MULTISPLASH_BG }
+    {"palettefx gradient", RGB_MATRIX_CUSTOM_PALETTEFX_GRADIENT },
+    {"palettefx flow", RGB_MATRIX_CUSTOM_PALETTEFX_FLOW },
+    {"palettefx ripple", RGB_MATRIX_CUSTOM_PALETTEFX_RIPPLE },
+    {"palettefx sparkle", RGB_MATRIX_CUSTOM_PALETTEFX_SPARKLE },
+    {"palettefx vortex", RGB_MATRIX_CUSTOM_PALETTEFX_VORTEX },
+    {"palettefx reactive", RGB_MATRIX_CUSTOM_PALETTEFX_REACTIVE }
     // {"starlight", RGB_MATRIX_STARLIGHT },
     // {"starlight smooth", RGB_MATRIX_STARLIGHT_SMOOTH },
     // {"starlight dual hue", RGB_MATRIX_STARLIGHT_DUAL_HUE },
@@ -79,6 +111,7 @@ uint8_t vp_start = 0;
 uint8_t vp_end = 15; //TODO: change VP_END in favor of global maxchars
 uint8_t vp_index_incr = 0;
 uint8_t last_anim = 0;
+uint8_t last_hsv;
 
 typedef struct {
     char* title;
@@ -108,16 +141,22 @@ extern rgb_config_t rgb_matrix_config;
 
 void update_viewport(void) {
     uint8_t by_how_much = 0;
+    uint8_t array_size = 0;
+    if (g_state == MENU_RGB_ANIM) {
+        array_size = ARRAY_SIZE(rgb_items2);
+    } else if (g_state == MENU_RGB_COLOR_PALETTE) {
+        array_size = ARRAY_SIZE(palette_items);
+    }
 
     if (g_index > vp_end) {
         by_how_much = g_index - 15;
         vp_start = by_how_much;
         vp_end = 15 + by_how_much;
-        if (vp_end > ARRAY_SIZE(rgb_items2)) {
-            vp_end = ARRAY_SIZE(rgb_items2);
+        if (vp_end > array_size) {
+            vp_end = array_size;
         }
         vp_index_incr = by_how_much;
-        uprintf("g_index: %u, vp_start: %u, vp_end: %u, how_much: %u, vp_index_incr: %u \n", g_index, vp_start, vp_end, by_how_much, vp_index_incr);    
+        // uprintf("g_index: %u, vp_start: %u, vp_end: %u, how_much: %u, vp_index_incr: %u \n", g_index, vp_start, vp_end, by_how_much, vp_index_incr);    
         return;
     } 
 
@@ -129,7 +168,7 @@ void update_viewport(void) {
         vp_end -= by_how_much;
 
         vp_index_incr -= by_how_much;
-        uprintf("g_index: %u, vp_start: %u, vp_end: %u, by_how_much: %u, vp_index_incr: %u \n", g_index, vp_start, vp_end, by_how_much, vp_index_incr);    
+        // uprintf("g_index: %u, vp_start: %u, vp_end: %u, by_how_much: %u, vp_index_incr: %u \n", g_index, vp_start, vp_end, by_how_much, vp_index_incr);    
     }
 }
 
@@ -275,7 +314,8 @@ void menu_encoder_rotate(bool clockwise) {
         case MENU_MAIN: max = 5; break;
         case MENU_RGB: max = 4; break;
         case MENU_RGB_ANIM: max = ARRAY_SIZE(rgb_items2); break;
-        case MENU_RGB_COLOR: max = 4; break;
+        case MENU_RGB_COLOR: max = 5; break;
+        case MENU_RGB_COLOR_PALETTE: max = ARRAY_SIZE(palette_items); break;
         case MENU_RGB_COLOR_DIAL: 
             rotate_hsv(clockwise);                 
             return;
@@ -320,6 +360,15 @@ void menu_encoder_rotate(bool clockwise) {
         rgb_matrix_mode_noeeprom(rgb_matrix_config.mode);        
     }
 
+    if (g_state == MENU_RGB_COLOR_PALETTE) {
+        if (g_index == 0) {
+            rgb_matrix_config.hsv.h = last_hsv;
+        } else {
+            rgb_matrix_config.hsv.h = RGB_MATRIX_HUE_STEP * palette_items[g_index].palette_id;
+        }
+        rgb_matrix_sethsv_noeeprom(rgb_matrix_config.hsv.h, 255, 255);     
+    }
+
     update_viewport();
     g_text_position_timer = timer_read32();
     g_text_first_idx = 0;
@@ -354,7 +403,7 @@ void menu_encoder_press(void) {
                 case 0: g_state = MENU_MAIN; break;
                 case 1: g_state = MENU_RGB_ANIM; break;
                 case 2: g_state = MENU_RGB_COLOR; break;
-                case 3: g_state = MENU_RGB_SPEED_DIAL; break;                
+                case 3: g_state = MENU_RGB_SPEED_DIAL; break;                        
             }
             g_index = 0;
             break;
@@ -373,14 +422,37 @@ void menu_encoder_press(void) {
             break;
 
         case MENU_RGB_COLOR:
-            if (g_index == 0) {
-                g_state = MENU_RGB;
-            } else {
-                g_state = MENU_RGB_COLOR_DIAL;
-                rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+            switch(g_index) {
+                case 0: 
+                    g_state = MENU_RGB;
+                    g_index = 0;
+                    break;
+                case 4: 
+                    g_state = MENU_RGB_COLOR_PALETTE;
+                    g_index = 0;
+                    break;
+                default:
+                    //DO NOT reset the g_index because 
+                    //i want to know what values im changing in the color dial
+                    g_state = MENU_RGB_COLOR_DIAL;
+                    rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+                    break;
+            }         
+            break;
+        case MENU_RGB_COLOR_PALETTE: 
+             if (g_index == 0) {
+                //revert to last animation if i selected back
+                g_state = MENU_RGB_COLOR;
+                g_index = 0;                
+                rgb_matrix_sethsv_noeeprom(last_hsv, 255, 255);   
+                // rgb_matrix_mode_noeeprom(last_anim);
+            } else {                
+                // rgb_matrix_config.mode = rgb_items2[g_index].effect_id;
+                last_hsv = rgb_matrix_config.hsv.h;
+                // rgb_matrix_sethsv_noeeprom(rgb_matrix_config.hsv.h, 255, 255);   
+                g_index = 0;
+                g_state = MENU_RGB_COLOR;
             }
-            //DO NOT reset the g_index because 
-            //i want to know what values im changing in the color dial
             break;
         case MENU_RGB_SPEED_DIAL: 
             g_index = 0;
@@ -460,12 +532,17 @@ void menu_render(void) {
                 draw_line(rgb_items2[i].name, i == g_index, j);
             }
             break;
-
+        case MENU_RGB_COLOR_PALETTE: 
+            for (uint8_t i = vp_start, j = 0; i <= vp_end; i++, j++) {                
+                draw_line(palette_items[i].name, i == g_index, j);
+            }
+            break;
         case MENU_RGB_COLOR:
             line = draw_line("<- Back", g_index == 0, line);
             line = draw_line("Hue", g_index == 1, line);
             line = draw_line("Sat.", g_index == 2, line);
-            draw_line("Bright.", g_index == 3, line);
+            line = draw_line("Bright.", g_index == 3, line);
+            draw_line("Palettes", g_index == 4, line);
             break;
         case MENU_RGB_SPEED_DIAL: 
             line = draw_line("Anim. spd:", false, line);
